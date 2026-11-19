@@ -20,10 +20,10 @@ const LoginPage: React.FC = () => {
                     <div className="login-header">
                         <div className="brand-logo">
                             <Zap size={32} color="#ce1212" fill="#ce1212" />
-                            <span className="brand-name">PREDICT</span>
+                            <span className="brand-name">FINOPS</span>
                         </div>
-                        <h1>Bem-vindo ao Predict!</h1>
-                        <p>Faça login com sua conta corporativa para acessar a plataforma de inteligência Service IT.</p>
+                        <h1>Bem-vindo ao FinOps!</h1>
+                        <p>Faça login com sua conta corporativa para acessar a plataforma FinOps da Service IT.</p>
                     </div>
 
                     <div className="login-actions">
@@ -43,7 +43,7 @@ const LoginPage: React.FC = () => {
                              <div className="logo-spark"></div>
                              <span>SERVICE IT</span>
                         </div>
-                        <p>© 2026 Predict Platform • Advanced Analytics</p>
+                        <p>© 2026 Service IT • FinOps</p>
                     </div>
                 </div>
             </div>
@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
                 </div>
                 <div className="feature-item">
                     <Zap size={20} />
-                    <span>IA Avançada</span>
+                    <span>Custos de Nuvem</span>
                 </div>
                 <div className="feature-item">
                     <Globe size={20} />

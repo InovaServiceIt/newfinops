@@ -1,182 +1,58 @@
-# PREDICT
+# NewFinops
 
-## A plataforma de AIOps mais importante da Service IT
+Novo FinOps da Service IT: **C# (.NET 8) + React (Vite) + Postgres + Coolify**. Vai substituir os dashboards do Grafana (Metrô Rio e Unimed) e os scripts Python do SRV-FINOPS.
 
-Estamos iniciando o **Predict**.
+**Fase atual (0):** esqueleto com login SSO Entra ID e uma tela "Hello World". Ainda sem banco de dados; o acesso ao Postgres (tabelas FOCUS) entra na próxima fase.
 
-Este não é só mais um projetinho, nem mais uma telinha bonitinha para dizer que temos IA.  
-Estamos começando a construir a plataforma de **AIOps mais importante da Service IT**.
+## Estrutura
 
-O Predict nasce com ambição grande.
-
-A ideia aqui não é fazer fumaça.  
-A ideia é construir uma plataforma séria, elegante, evolutiva e útil de verdade para o negócio, para a operação e para o futuro da empresa.
-
-## Como vamos começar
-
-Vamos começar com um **HTML simples**.
-
-Simples de propósito.  
-Limpo.  
-Direto.  
-Bonito.  
-Executivo.  
-Sem enfeite desnecessário.
-
-Esse HTML inicial é só a primeira casca visual da plataforma.  
-Ele não representa o tamanho do projeto.  
-Ele representa apenas o ponto de partida.
-
-A partir dessa base, vamos evoluir muito.
-
-## O que o Predict vai se tornar
-
-O Predict deve evoluir para uma plataforma robusta de AIOps, com capacidade para:
-
-* coletar sinais de observabilidade
-* normalizar eventos
-* consolidar histórico operacional
-* correlacionar sinais e padrões
-* detectar recorrência e tendência
-* reduzir ruído e falso-positivo
-* apoiar decisões operacionais
-* sustentar governança
-* permitir automação assistida por agentes
-* integrar observabilidade, ITSM e comunicação corporativa
-
-## Primeira referência visual
-
-A primeira tela já nasce com os módulos:
-
-* Predict Radar
-* Predict Discovery
-* Predict Checkpoint
-* Predict Builder
-* Predict Approval
-* Predict Action
-
-Neste primeiro momento, queremos uma tela única, limpa, elegante e forte, com identidade visual de produto executivo.
-
-## Postura de construção
-
-Quero que você entenda bem o espírito desse projeto:
-
-Não estamos montando um protótipo qualquer.  
-Estamos abrindo a fundação de uma plataforma estratégica.
-
-Por isso, construa com mentalidade de evolução.
-
-Comece simples, mas não comece pequeno de cabeça.  
-Organize tudo já pensando em crescimento, reaproveitamento, manutenção, clareza e expansão futura.
-
-## Diretrizes para a base inicial
-
-### Frontend
-
-* começar com HTML, CSS e estrutura simples
-* manter o visual limpo, executivo e moderno
-* preservar responsividade
-* evitar complexidade prematura
-* deixar o código fácil de expandir depois
-
-### Arquitetura
-
-* organizar a base pensando em crescimento
-* separar bem apresentação, domínio, backend e integrações
-* preparar o terreno para componentes reutilizáveis
-* evitar gambiarra logo na largada
-
-### Evolução esperada
-
-Depois dessa primeira base visual, o projeto deve estar preparado para evoluir para:
-
-* componentes de interface
-* APIs e serviços
-* persistência em PostgreSQL
-* integração com repositório Git
-* pipeline de build e deploy
-* segurança e controle de acesso
-* auditoria e rastreabilidade
-* inteligência operacional progressiva
-* governança de agentes
-* automação controlada
-
-## Banco de dados
-
-Vamos utilizar PostgreSQL.
-
-As configurações sensíveis não devem ficar expostas no código nem em arquivos versionados.  
-Use variáveis de ambiente.
-
-Exemplo:
-
-```env
-DB\\\_HOST=<secure\\\_env>
-DB\\\_PORT=5432
-DB\\\_NAME=<secure\\\_env>
-DB\\\_USER=<secure\\\_env>
-DB\\\_PASSWORD=<secure\\\_env>
+```
+backend/    API .NET 8 (auth Entra, /api/auth/me, /api/health) e servidor da SPA
+frontend/   React + Vite + TypeScript (login, header, Hello World)
+memories/   Comunicação entre o Claude (chat) e o VSClaude
+Dockerfile  Build multi-stage: frontend → wwwroot do backend, porta 5000
 ```
 
-## Repositório Git
+## Rodar local
 
-Repositório principal do projeto:
+Pré-requisitos: .NET SDK 8 e Node 20.
 
-```text
-https://github.com/InovaServiceIt/Predict
+```bash
+# Backend (porta 5000)
+cd backend
+dotnet user-secrets set "AzureAd:TenantId" "<tenant>"
+dotnet user-secrets set "AzureAd:ClientId" "<client-id>"
+dotnet user-secrets set "AzureAd:ClientSecret" "<secret>"
+dotnet run --urls http://localhost:5000
+
+# Frontend (porta 3000, proxy de /api para o backend)
+cd frontend
+npm install
+npm run dev
 ```
 
-O token de acesso ao Git também não deve ser gravado em código ou markdown versionado.  
-Use variável segura.
+Para testar o fluxo completo de SSO, o mais simples é gerar o build do frontend e deixar o .NET servir tudo: `npm run build` e copiar `frontend/dist` para `backend/wwwroot` (é o que o `Dockerfile` faz).
 
-Exemplo:
+## Docker
 
-```env
-GIT\\\_REPO\\\_URL=https://github.com/InovaServiceIt/Predict
-GIT\\\_TOKEN=<secure\\\_env>
+```bash
+docker build -t newfinops .
+docker run -p 5000:5000 -e AzureAd__TenantId=... -e AzureAd__ClientId=... -e AzureAd__ClientSecret=... newfinops
 ```
 
-## Recado direto para o AntiGravity
+## Variáveis de ambiente (Coolify)
 
-AntiGravity, presta atenção no tamanho do que está começando aqui.
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `AzureAd__TenantId` | sim | Tenant do Entra ID |
+| `AzureAd__ClientId` | sim | App Registration do NewFinops |
+| `AzureAd__ClientSecret` | sim | Segredo da App Registration |
+| `Cors__AllowedOrigins` | não | Origens extras, separadas por vírgula. Vazio = mesma origem (SPA servida pelo .NET) |
 
-O Predict é um projeto estratégico.  
-Ele pode virar a principal plataforma de inteligência operacional da Service IT.
+No App Registration, cadastrar o redirect `https://<domínio>/signin-oidc`. Porta do container: **5000**.
 
-Hoje ele começa com um HTML simples.  
-Amanhã ele pode ser o coração da correlação, da decisão, da governança e da automação assistida da operação.
+## Regras
 
-Então eu quero uma base:
-
-* limpa
-* bonita
-* profissional
-* organizada
-* forte
-* preparada para crescer
-
-Não complique sem necessidade.  
-Mas também não monte isso com cabeça de projeto descartável.
-
-Quero começo simples com visão grande.
-
-## Primeira missão
-
-Sua primeira missão é:
-
-* estruturar a base inicial do Predict
-* usar o HTML simples como ponto de partida visual
-* manter uma identidade forte e executiva
-* preparar o projeto para evolução posterior sem retrabalho desnecessário
-
-## Resumo final
-
-Estamos começando pequeno no visual, mas grande na visão.
-
-O Predict nasce agora.  
-E ele não nasceu para ser mais um nome bonito.
-
-Ele nasceu para ser plataforma de verdade.
-
-
-
+- DDL é executada pelo HLGDR; o código nunca altera o banco.
+- Nenhum segredo no Git: só placeholders em `appsettings.json`.
+- Parâmetros de negócio ficam no banco; no Coolify só configuração estática e segredos.

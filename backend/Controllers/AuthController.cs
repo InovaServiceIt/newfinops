@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
 using System.Security.Claims;
 
-namespace Predict.Backend.Controllers
+namespace Finops.Backend.Controllers
 {
     [Authorize]
     [ApiController]

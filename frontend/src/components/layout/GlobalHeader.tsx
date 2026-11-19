@@ -13,7 +13,7 @@ const GlobalHeader: React.FC = () => {
           <Settings size={20} />
         </div>
         <div className="header-title-group">
-          <span className="header-brand">PREDICT</span>
+          <span className="header-brand">FINOPS</span>
           <span className="header-tagline">— Xurupita. Operações mais inteligentes.</span>
         </div>
       </div>

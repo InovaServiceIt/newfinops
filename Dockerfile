@@ -12,12 +12,7 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /src
 
-COPY backend/Predict.Backend.csproj ./
-ARG ConnectionStrings__SourceConnection
-ENV ConnectionStrings__SourceConnection=$ConnectionStrings__SourceConnection
-
-ARG ConnectionStrings__DefaultConnection
-
+COPY backend/Finops.Backend.csproj ./
 RUN dotnet restore
 
 COPY backend/ ./
@@ -37,9 +32,6 @@ EXPOSE 5000
 
 ENV ASPNETCORE_URLS=http://+:5000
 ENV ASPNETCORE_ENVIRONMENT=Production
-ARG ConnectionStrings__DefaultConnection
-ENV ConnectionStrings__DefaultConnection=$ConnectionStrings__DefaultConnection
-ARG ConnectionStrings__SourceConnection
-ENV ConnectionStrings__SourceConnection=$ConnectionStrings__SourceConnection
 
-ENTRYPOINT ["dotnet", "Predict.Backend.dll"]
+# Segredos e configuração (AzureAd__*, Cors__AllowedOrigins) entram por variáveis do Coolify.
+ENTRYPOINT ["dotnet", "Finops.Backend.dll"]

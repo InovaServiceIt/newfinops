@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Predict.Backend.Controllers
+namespace Finops.Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
