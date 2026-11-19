@@ -12,15 +12,40 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
 
-// Chamadas de API sem sessão recebem 401 (o React redireciona para /login);
-// as demais rotas seguem o redirecionamento normal para o Entra.
+// Em /api, o desafio (challenge/forbid) do OIDC é encaminhado ao esquema de cookie,
+// que responde 401/403 em vez de redirecionar para o Entra. O encaminhamento acontece
+// antes de o OIDC buscar a configuração do Entra, então não há 302 nem chamada externa.
+// As demais rotas seguem o fluxo OIDC normal.
+builder.Services.Configure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>
+{
+    options.ForwardDefaultSelector = context =>
+        context.Request.Path.StartsWithSegments("/api")
+            ? CookieAuthenticationDefaults.AuthenticationScheme
+            : null;
+});
+
+// Chamadas de API sem sessão recebem 401 e sem permissão recebem 403 (o React redireciona
+// para /login); as demais rotas seguem o redirecionamento normal.
 builder.Services.Configure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
     options.Events.OnRedirectToLogin = context =>
     {
         if (context.Request.Path.StartsWithSegments("/api"))
         {
-            context.Response.StatusCode = 401;
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        }
+        else
+        {
+            context.Response.Redirect(context.RedirectUri);
+        }
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
         }
         else
         {
@@ -91,9 +116,12 @@ app.UseAuthorization();
 // SPA React servida pelo próprio .NET (build do Vite em wwwroot).
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.MapFallbackToFile("index.html");
 
 app.MapControllers();
 app.MapRazorPages();
+
+// Rotas /api inexistentes retornam 404 (e não o index.html da SPA).
+app.MapFallback("/api/{**slug}", () => Results.NotFound());
+app.MapFallbackToFile("index.html");
 
 app.Run();
