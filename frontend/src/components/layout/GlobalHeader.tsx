@@ -14,7 +14,7 @@ const GlobalHeader: React.FC = () => {
         </div>
         <div className="header-title-group">
           <span className="header-brand">PREDICT</span>
-          <span className="header-tagline">— Especialistas mais precisos. Operações mais inteligentes.</span>
+          <span className="header-tagline">— Xurupita. Operações mais inteligentes.</span>
         </div>
       </div>
       
