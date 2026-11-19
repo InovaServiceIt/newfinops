@@ -1,0 +1,218 @@
+.dashboard-wrapper {
+  background-color: #E2E4E9; /* very light gray background as in screenshot */
+  min-height: 100vh;
+  color: #333;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* Dashboard Content */
+.dashboard-container {
+  padding: 1.5rem 2rem 1rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Modules Row (Tabs) */
+.modules-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.module-tab {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.module-tab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.module-tab.active {
+  background: #fff;
+  border: 1px solid #E63946;
+  border-bottom: 4px solid #E63946;
+  box-shadow: 0 10px 20px -5px rgba(230, 57, 70, 0.15);
+}
+
+.module-tab-icon {
+  color: #666;
+  margin-bottom: 8px;
+  transition: color 0.2s ease;
+}
+
+.module-tab-icon.active-icon {
+  color: #E63946;
+}
+
+.module-tab-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.module-tab-title.active-text {
+  color: #E63946;
+}
+
+.module-tab-desc {
+  font-size: 0.7rem;
+  color: #777;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0 4px;
+}
+
+.module-details-panel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0,0,0,0.02);
+  min-height: 370px;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 1.5rem;
+}
+
+.details-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.details-header-icon-box {
+  width: 48px;
+  height: 48px;
+  background: rgba(230, 57, 70, 0.08);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.details-header-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.details-header-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+}
+
+.details-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatars-group {
+  display: flex;
+  gap: -8px;
+}
+
+/* Pseudo avatars styling since we don't have images */
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  margin-left: -8px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+}
+.avatar:first-child { margin-left: 0; }
+
+.expert-red { background: linear-gradient(135deg, #FF6B6B, #E63946); }
+.expert-green { background: linear-gradient(135deg, #4ade80, #16a34a); }
+.expert-blue { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+
+.expert-status {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #555;
+  margin-left: 8px;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2rem 1.25rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.feature-item:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+.feature-icon {
+  color: #E63946;
+  margin-top: 4px;
+}
+
+.feature-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.feature-desc {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.feature-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #888;
+  padding: 3rem 0;
+  font-style: italic;
+}
