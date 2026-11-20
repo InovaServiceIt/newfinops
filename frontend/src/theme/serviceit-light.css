@@ -1,0 +1,78 @@
+/*
+ * Skin "Service IT Light" (padrão): fundo claro, cards brancos,
+ * destaque vermelho Service IT, azul como cor secundária.
+ * Equilíbrio 60-30-10: --bg (60%) · --surface/sidebar (30%) · --accent (10%).
+ */
+:root,
+[data-theme="serviceit-light"] {
+  color-scheme: light;
+
+  /* Fundo / superfície */
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-hover: #eef2f6;
+  --overlay: rgba(15, 23, 42, 0.45);
+
+  /* Texto */
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+  --text-on-accent: #ffffff;
+
+  /* Borda */
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --focus-ring: rgba(200, 16, 46, 0.35);
+
+  /* Destaque */
+  --accent: #c8102e;
+  --accent-hover: #a30d25;
+  --accent-soft: #fdecef;
+  --accent-2: #1d4ed8;
+
+  /* Status (mesmo significado em todos os skins) */
+  --success: #166534;
+  --success-soft: #dcfce7;
+  --warning: #92400e;
+  --warning-soft: #fef3c7;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+
+  /* Header (fixo escuro: mesma cor do fundo do logo Service IT) */
+  --header-bg: #151515;
+  --header-text: #ffffff;
+  --header-text-muted: #c4c9d0;
+  --header-border: #e3000f;
+  --header-control-bg: rgba(255, 255, 255, 0.08);
+  --header-control-hover: rgba(255, 255, 255, 0.16);
+  --header-brand-icon-bg: #c8102e;
+
+  /* Sidebar */
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-item: #334155;
+  --sidebar-item-hover-bg: #f1f5f9;
+  --sidebar-item-active-bg: #fdecef;
+  --sidebar-item-active-text: #a30d25;
+  --sidebar-section: #64748b;
+
+  /* Gráficos (fases futuras) */
+  --chart-aws: #d97706;
+  --chart-azure: #0078d4;
+  --chart-gcp: #16a34a;
+  --chart-oci: #c74634;
+  --chart-forecast: #7c3aed;
+  --chart-grid: #e2e8f0;
+
+  /* Efeitos */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-header: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --glass-blur: 0px;
+}

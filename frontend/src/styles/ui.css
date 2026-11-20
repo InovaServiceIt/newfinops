@@ -1,0 +1,163 @@
+/*
+ * Componentes base de formulário e conteúdo. Todo form do FinOps deve usar estas
+ * classes: elas só leem tokens, então nenhum form "foge" da paleta do skin.
+ */
+
+/* ── Card / superfície ─────────────────────────────────────────────────────── */
+.ui-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.ui-card-title {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Botões ────────────────────────────────────────────────────────────────── */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.ui-btn-primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.ui-btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.ui-btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.ui-btn-secondary:hover {
+  background: var(--surface-hover);
+}
+
+.ui-btn-ghost {
+  color: var(--text-muted);
+}
+.ui-btn-ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* ── Campos ────────────────────────────────────────────────────────────────── */
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ui-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ui-input,
+.ui-select {
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.ui-input::placeholder {
+  color: var(--text-subtle);
+}
+
+.ui-input:focus,
+.ui-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.ui-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Badges de status ──────────────────────────────────────────────────────── */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.ui-badge-success { background: var(--success-soft); color: var(--success); }
+.ui-badge-warning { background: var(--warning-soft); color: var(--warning); }
+.ui-badge-danger  { background: var(--danger-soft);  color: var(--danger); }
+.ui-badge-info    { background: var(--info-soft);    color: var(--info); }
+.ui-badge-accent  { background: var(--accent-soft);  color: var(--sidebar-item-active-text); }
+
+/* ── Tabela ────────────────────────────────────────────────────────────────── */
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.ui-table th {
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-strong);
+}
+.ui-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.ui-table tbody tr:hover {
+  background: var(--surface-hover);
+}
+.ui-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Alertas ───────────────────────────────────────────────────────────────── */
+.ui-alert {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border-left: 4px solid currentColor;
+  font-size: var(--font-size-sm);
+}
+.ui-alert-info    { background: var(--info-soft);    color: var(--info); }
+.ui-alert-success { background: var(--success-soft); color: var(--success); }
+.ui-alert-warning { background: var(--warning-soft); color: var(--warning); }
+.ui-alert-danger  { background: var(--danger-soft);  color: var(--danger); }

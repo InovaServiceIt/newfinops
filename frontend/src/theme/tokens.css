@@ -1,0 +1,49 @@
+/*
+ * Tokens neutros, comuns a todos os skins: tipografia, espaçamento, layout,
+ * z-index e transições. Cores ficam nos arquivos de skin; componentes nunca
+ * usam cor literal, só var(--token).
+ */
+:root {
+  /* Tipografia */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-md: 0.9375rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 1.875rem;
+
+  /* Espaçamento */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Layout */
+  --header-height: 56px;
+  --header-border-width: 2px;
+  --sidebar-width: 248px;
+  --sidebar-width-collapsed: 64px;
+  --content-max-width: 1280px;
+  --radius-full: 9999px;
+
+  /* Camadas */
+  --z-sidebar: 900;
+  --z-header: 1000;
+  --z-overlay: 1100;
+
+  /* Transições */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+
+  /* Marca de terceiros (fixa, igual em todos os skins): logo Microsoft do botão de login */
+  --brand-ms-red: #f25022;
+  --brand-ms-green: #7fba00;
+  --brand-ms-blue: #00a4ef;
+  --brand-ms-yellow: #ffb900;
+}

@@ -1,3 +1,4 @@
+/* Header fixo e escuro em todos os skins: o logo Service IT fica sempre visível. */
 .global-header {
   position: fixed;
   top: 0;
@@ -5,47 +6,46 @@
   right: 0;
   height: var(--header-height);
   background-color: var(--header-bg);
-  border-bottom: 2px solid var(--header-border-color);
+  border-bottom: var(--header-border-width) solid var(--header-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
-  z-index: 1000;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  padding: 0 var(--space-6) 0 var(--space-4);
+  z-index: var(--z-header);
+  box-shadow: var(--shadow-header);
+  color: var(--header-text);
+  box-sizing: content-box;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.header-left:hover {
-  opacity: 0.9;
+  min-width: 0;
 }
 
 .header-logo-icon {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: var(--header-brand-icon-bg);
+  color: var(--header-text);
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+  flex-shrink: 0;
 }
 
 .header-title-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .header-brand {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: 1px;
@@ -53,21 +53,66 @@
 }
 
 .header-tagline {
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: var(--header-tagline);
-  margin-top: 2px;
+  font-size: var(--font-size-sm);
+  color: var(--header-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-4);
+  flex-shrink: 0;
 }
 
-.service-it-group {
+.header-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--header-control-bg);
+  color: var(--header-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  transition: background-color var(--transition-fast);
+}
+
+.header-theme-toggle:hover {
+  background: var(--header-control-hover);
+}
+
+.header-user {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
+  max-width: 220px;
+}
+
+.header-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--header-control-hover);
+  color: var(--header-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.header-user-name {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--header-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .service-it-logo-img {
@@ -75,32 +120,12 @@
   width: auto;
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-.header-help-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: help;
-  transition: all 0.2s ease;
-}
-
-.header-help-icon:hover {
-  border-color: white;
-  color: white;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-@media (max-width: 768px) {
-  .header-tagline {
+@media (max-width: 1024px) {
+  .header-tagline,
+  .header-theme-name,
+  .header-user-name {
     display: none;
   }
 }

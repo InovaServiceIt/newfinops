@@ -1,30 +1,24 @@
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
-import './App.css';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import GlobalHeader from './components/layout/GlobalHeader';
 import { AuthGuard } from './components/auth/AuthGuard';
+import AppShell from './components/layout/AppShell';
+import { HOME_PATH, MENU_ITEMS } from './navigation/menu';
 import LoginPage from './pages/Login/LoginPage';
-import HelloWorldPage from './pages/HelloWorld/HelloWorldPage';
-
-function MainLayout() {
-  return (
-    <div className="layout-root">
-      <GlobalHeader />
-      <main className="content-area">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
+import PlaceholderPage from './pages/Placeholder/PlaceholderPage';
+import TokensPage from './pages/Tokens/TokensPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route element={<AuthGuard><MainLayout /></AuthGuard>}>
-          <Route path="/" element={<HelloWorldPage />} />
-          <Route path="*" element={<HelloWorldPage />} />
+        <Route element={<AuthGuard><AppShell /></AuthGuard>}>
+          <Route path="/" element={<Navigate to={HOME_PATH} replace />} />
+          {MENU_ITEMS.map((item) => (
+            <Route key={item.path} path={item.path} element={<PlaceholderPage title={item.title} />} />
+          ))}
+          <Route path="/_tokens" element={<TokensPage />} />
+          <Route path="*" element={<Navigate to={HOME_PATH} replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

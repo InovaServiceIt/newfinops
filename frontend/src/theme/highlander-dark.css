@@ -1,0 +1,77 @@
+/*
+ * Skin "Highlander Dark": fundo azul-petróleo escuro, superfícies translúcidas (glass),
+ * destaque turquesa/teal, roxo como cor secundária.
+ * Equilíbrio 60-30-10: --bg (60%) · --surface/sidebar (30%) · --accent (10%).
+ */
+[data-theme="highlander-dark"] {
+  color-scheme: dark;
+
+  /* Fundo / superfície */
+  --bg: #0b1e28;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-hover: rgba(255, 255, 255, 0.11);
+  --overlay: rgba(2, 8, 12, 0.6);
+
+  /* Texto */
+  --text: #e6f0f4;
+  --text-muted: #a3b8c2;
+  --text-subtle: #85a0ac;
+  --text-on-accent: #042321;
+
+  /* Borda */
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.20);
+  --focus-ring: rgba(45, 212, 191, 0.45);
+
+  /* Destaque */
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-soft: rgba(45, 212, 191, 0.14);
+  --accent-2: #a78bfa;
+
+  /* Status (mesmo significado em todos os skins) */
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
+  --danger: #fb8c8c;
+  --danger-soft: rgba(251, 140, 140, 0.12);
+  --info: #7ab4fb;
+  --info-soft: rgba(122, 180, 251, 0.12);
+
+  /* Header (fixo escuro: mesma cor do fundo do logo Service IT) */
+  --header-bg: #151515;
+  --header-text: #ffffff;
+  --header-text-muted: #c4c9d0;
+  --header-border: #e3000f;
+  --header-control-bg: rgba(255, 255, 255, 0.08);
+  --header-control-hover: rgba(255, 255, 255, 0.16);
+  --header-brand-icon-bg: #0f766e;
+
+  /* Sidebar */
+  --sidebar-bg: #0d2531;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-item: #b9ccd5;
+  --sidebar-item-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-item-active-bg: rgba(45, 212, 191, 0.14);
+  --sidebar-item-active-text: #5eead4;
+  --sidebar-section: #85a0ac;
+
+  /* Gráficos (fases futuras) */
+  --chart-aws: #fbbf24;
+  --chart-azure: #38bdf8;
+  --chart-gcp: #4ade80;
+  --chart-oci: #fb7185;
+  --chart-forecast: #c4b5fd;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+
+  /* Efeitos */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-header: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --glass-blur: 12px;
+}

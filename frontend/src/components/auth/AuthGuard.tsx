@@ -1,25 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import './AuthGuard.css';
 
-interface User {
+export interface CurrentUser {
   name: string;
-  email: string;
-  tenantId: string;
+  email?: string;
+  tenantId?: string;
+}
+
+const UserContext = createContext<CurrentUser | null>(null);
+
+/** Usuário logado (disponível dentro do AuthGuard). */
+export function useCurrentUser(): CurrentUser | null {
+  return useContext(UserContext);
 }
 
 export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/auth/me');
         if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-          setIsAuthenticated(true);
+          setUser(await response.json());
         } else {
-          // Redireciona para nossa Landing Page customizada
+          // 401 (sem sessão) ou qualquer outra falha: tela de login.
           window.location.href = '/login';
         }
       } catch (error) {
@@ -31,16 +36,14 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
     checkAuth();
   }, []);
 
-  if (isAuthenticated === null) {
+  if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0b] text-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-400 font-medium">Verificando acesso corporativo...</p>
-        </div>
+      <div className="auth-loading">
+        <div className="auth-spinner" />
+        <p>Verificando acesso corporativo...</p>
       </div>
     );
   }
 
-  return <>{children}</>;
+  return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
 };
