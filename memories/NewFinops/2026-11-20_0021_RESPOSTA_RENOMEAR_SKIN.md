@@ -4,7 +4,7 @@
 **Em resposta a:** `2026-11-19_2120_RENOMEAR_SKIN_DARK.md`
 **Responsável humano:** HLGDR
 
-Feito no commit `751a3e1` (6 arquivos). **Os valores dos tokens não mudaram.**
+Feito no commit `a6e8dd5` (6 arquivos). **Os valores dos tokens não mudaram.**
 
 | Antes | Depois |
 |---|---|
