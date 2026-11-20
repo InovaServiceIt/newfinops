@@ -54,6 +54,7 @@ docker run -p 5000:5000 -e AzureAd__TenantId=... -e AzureAd__ClientId=... -e Azu
 | `AzureAd__TenantId` | sim | Tenant do Entra ID |
 | `AzureAd__ClientId` | sim | App Registration do NewFinops |
 | `AzureAd__ClientSecret` | sim | Segredo da App Registration |
+| `ConnectionStrings__CloudVista` | sim (segredo) | Banco próprio `cloudvista` (usuário `svc_cv_api`, leitura e escrita com RLS). Sem ela a app sobe, mas as rotas `/api/*` (exceto health) respondem 503 |
 | `ConnectionStrings__FinopsDb` | não (segredo) | Conexão com o `finopsdatabase`. A app força sessão **somente leitura**. Sem ela, a app sobe e `/api/health/db` responde `nao_configurado` |
 | `Cors__AllowedOrigins` | não | Origens extras, separadas por vírgula. Vazio = mesma origem (SPA servida pelo .NET) |
 
@@ -72,6 +73,13 @@ npm run lint:colors     # falha se houver cor literal fora de src/theme/
 npm run check:contrast  # contraste WCAG ≥ 4.5:1 dos pares texto/fundo nos dois skins
 npm run typecheck
 ```
+
+## Perfis e acesso
+
+- Três perfis, gravados na tabela `usuario` do banco `cloudvista` (fonte da verdade, não app roles do Entra): `ADMINISTRADOR`, `ANALISTA_FINOPS` e `CLIENTE`.
+- Usuário autenticado no Entra mas sem cadastro ativo → `/api/*` responde 403 `{ codigo: "USUARIO_NAO_AUTORIZADO" }` e o front mostra "Acesso não autorizado".
+- `cliente` e `usuario_cliente` têm RLS: toda consulta passa por `CloudVistaDb.ExecutarComContextoAsync`, que define `app.perfil` e `app.usuario_id` com `set_config(..., true)` (escopo da transação). Sem contexto, o RLS retorna zero linhas.
+- Cadastros de clientes e usuários em **Configurações** (só administrador; o backend exige a política `Administrador`).
 
 ## Regras
 

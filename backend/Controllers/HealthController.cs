@@ -10,20 +10,44 @@ namespace Finops.Backend.Controllers
     public class HealthController : ControllerBase
     {
         private readonly FinopsDb _db;
+        private readonly CloudVistaDb _cloudVista;
         private readonly ILogger<HealthController> _logger;
 
-        public HealthController(FinopsDb db, ILogger<HealthController> logger)
+        public HealthController(FinopsDb db, CloudVistaDb cloudVista, ILogger<HealthController> logger)
         {
             _db = db;
+            _cloudVista = cloudVista;
             _logger = logger;
         }
 
-        /// <summary>Health anônimo da aplicação (não toca no banco).</summary>
+        /// <summary>
+        /// Health anônimo da aplicação. Inclui cloudVistaDb ("ok" | "nao_configurado" | "erro")
+        /// via SELECT 1, sem detalhe de erro na resposta.
+        /// </summary>
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
-            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+            var cloudVistaDb = "nao_configurado";
+            if (_cloudVista.IsConfigured)
+            {
+                try
+                {
+                    await _cloudVista.ExecutarSemContextoAsync(async (conn, tx) =>
+                    {
+                        await using var cmd = new Npgsql.NpgsqlCommand("SELECT 1", conn, tx);
+                        return await cmd.ExecuteScalarAsync(cancellationToken);
+                    }, cancellationToken);
+                    cloudVistaDb = "ok";
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogError(ex, "Falha no health check do banco CloudVista.");
+                    cloudVistaDb = "erro";
+                }
+            }
+
+            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow, cloudVistaDb });
         }
 
         /// <summary>

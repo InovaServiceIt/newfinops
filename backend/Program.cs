@@ -56,7 +56,8 @@ builder.Services.Configure<CookieAuthenticationOptions>(CookieAuthenticationDefa
     };
 });
 
-builder.Services.AddAuthorization();
+// Políticas por perfil (Administrador / Analista / Autorizado), perfil lido do banco CloudVista.
+builder.Services.AddAuthorization(Finops.Backend.Identidade.Politicas.Registrar);
 
 // Filtro global: todo controller exige usuário autenticado.
 builder.Services.AddControllersWithViews(options =>
@@ -73,6 +74,13 @@ builder.Services.AddSwaggerGen();
 
 // ── Banco finopsdatabase: somente leitura (ConnectionStrings:FinopsDb, opcional) ──
 builder.Services.AddSingleton<FinopsDb>();
+
+// ── Banco cloudvista: leitura e escrita com RLS (ConnectionStrings:CloudVista) ──
+builder.Services.AddSingleton<CloudVistaDb>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Finops.Backend.Identidade.UsuarioAtualServico>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Finops.Backend.Identidade.PerfilHandler>();
+builder.Services.AddSingleton<Finops.Backend.Admin.AdminRepositorio>();
 
 // ── Visão Geral ──
 builder.Services.AddMemoryCache();
@@ -99,6 +107,7 @@ var app = builder.Build();
 
 // Instancia já no startup para registrar no log se a conexão com o banco está configurada.
 app.Services.GetRequiredService<FinopsDb>();
+app.Services.GetRequiredService<CloudVistaDb>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -124,6 +133,8 @@ app.Use((context, next) =>
 
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
+// Usuário autenticado precisa existir e estar ativo no CloudVista (403 USUARIO_NAO_AUTORIZADO).
+app.UseMiddleware<Finops.Backend.Identidade.UsuarioAutorizadoMiddleware>();
 app.UseAuthorization();
 
 // SPA React servida pelo próprio .NET (build do Vite em wwwroot).
