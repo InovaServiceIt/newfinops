@@ -18,18 +18,19 @@
 
 .sidebar-nav {
   flex: 1;
+  /* Fallback para telas muito baixas: a partir de ~640px de viewport cabe sem rolagem. */
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--space-4) var(--space-3);
+  padding: var(--sidebar-padding-y) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--sidebar-section-gap);
 }
 
 .sidebar-section {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--sidebar-item-gap);
 }
 
 .sidebar-section-title {
@@ -38,7 +39,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--sidebar-section);
-  padding: 0 var(--space-3) var(--space-2);
+  padding: 0 var(--space-3) var(--sidebar-section-title-gap);
   white-space: nowrap;
 }
 
@@ -46,7 +47,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  height: 38px;
+  height: var(--sidebar-item-height);
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   color: var(--sidebar-item);
@@ -75,7 +76,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--sidebar-footer-padding) var(--space-3);
   border-top: 1px solid var(--sidebar-border);
 }
 
@@ -122,7 +123,7 @@
 }
 
 .sidebar.is-collapsed .sidebar-section {
-  padding-top: var(--space-2);
+  padding-top: var(--sidebar-section-gap);
   border-top: 1px solid var(--sidebar-border);
 }
 

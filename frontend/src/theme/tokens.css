@@ -29,6 +29,12 @@
   --header-border-width: 2px;
   --sidebar-width: 248px;
   --sidebar-width-collapsed: 64px;
+  --sidebar-padding-y: var(--space-3);
+  --sidebar-item-height: 32px;
+  --sidebar-item-gap: 2px;
+  --sidebar-section-gap: var(--space-3);
+  --sidebar-section-title-gap: 6px;
+  --sidebar-footer-padding: var(--space-2);
   --content-max-width: 1280px;
   --radius-full: 9999px;
 
