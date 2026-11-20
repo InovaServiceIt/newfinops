@@ -7,7 +7,7 @@ Novo FinOps da Service IT: **C# (.NET 8) + React (Vite) + Postgres + Coolify**. 
 ## Estrutura
 
 ```
-backend/    API .NET 8 (auth Entra, /api/auth/me, /api/health) e servidor da SPA
+backend/    API .NET 8 (auth Entra, /api/auth/me, /api/health, /api/health/db) e servidor da SPA
 frontend/   React + Vite + TypeScript (login, casca, skins/tokens)
 memories/   Comunicação entre o Claude (chat) e o VSClaude
 Dockerfile  Build multi-stage: frontend → wwwroot do backend, porta 5000
@@ -47,6 +47,7 @@ docker run -p 5000:5000 -e AzureAd__TenantId=... -e AzureAd__ClientId=... -e Azu
 | `AzureAd__TenantId` | sim | Tenant do Entra ID |
 | `AzureAd__ClientId` | sim | App Registration do NewFinops |
 | `AzureAd__ClientSecret` | sim | Segredo da App Registration |
+| `ConnectionStrings__FinopsDb` | não (segredo) | Conexão com o `finopsdatabase`. A app força sessão **somente leitura**. Sem ela, a app sobe e `/api/health/db` responde `nao_configurado` |
 | `Cors__AllowedOrigins` | não | Origens extras, separadas por vírgula. Vazio = mesma origem (SPA servida pelo .NET) |
 
 No App Registration, cadastrar o redirect `https://<domínio>/signin-oidc`. Porta do container: **5000**.
@@ -67,6 +68,7 @@ npm run typecheck
 
 ## Regras
 
-- DDL é executada pelo HLGDR; o código nunca altera o banco.
+- DDL é executada pelo HLGDR; o código nunca altera o banco (a conexão é forçada para somente leitura).
+- Nada de conexão com o banco a partir de máquina de desenvolvimento: a validação de banco é feita no Coolify.
 - Nenhum segredo no Git: só placeholders em `appsettings.json`.
 - Parâmetros de negócio ficam no banco; no Coolify só configuração estática e segredos.

@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Identity.Web" Version="4.8.0" />
     <PackageReference Include="Microsoft.Identity.Web.UI" Version="4.8.0" />
+    <PackageReference Include="Npgsql" Version="8.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 

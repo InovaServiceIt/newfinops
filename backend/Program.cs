@@ -1,3 +1,4 @@
+using Finops.Backend.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
@@ -70,6 +71,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ── Banco finopsdatabase: somente leitura (ConnectionStrings:FinopsDb, opcional) ──
+builder.Services.AddSingleton<FinopsDb>();
+
 // ── CORS: origens via configuração (ex.: Cors__AllowedOrigins="https://a,https://b") ──
 var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -86,6 +90,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Instancia já no startup para registrar no log se a conexão com o banco está configurada.
+app.Services.GetRequiredService<FinopsDb>();
 
 if (app.Environment.IsDevelopment())
 {
