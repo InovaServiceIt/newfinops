@@ -9,7 +9,8 @@ Novo FinOps da Service IT: **C# (.NET 8) + React (Vite) + Postgres + Coolify**. 
 ```
 backend/    API .NET 8 (auth Entra, /api/auth/me, /api/health, /api/health/db) e servidor da SPA
 frontend/   React + Vite + TypeScript (login, casca, skins/tokens, Visão Geral)
-tests/      Testes unitários do backend (xUnit)
+worker/     cloudvista-worker: .NET 8 + Quartz.NET (agenda e fila no Postgres), Dockerfile próprio
+tests/      Testes unitários do backend e do worker (xUnit)
 memories/   Comunicação entre o Claude (chat) e o VSClaude
 Dockerfile  Build multi-stage: frontend → wwwroot do backend, porta 5000
 ```
@@ -89,6 +90,12 @@ npm run typecheck
 - Formato binário v1: `0x01 | nonce(12) | ct | tag(16)`; AAD `cv:dek:v1:{cliente}:{versao_kek}` e `cv:cred:v1:{conta}:{tipo}`.
 - A API só cifra e grava (o `svc_cv_api` não tem SELECT em `conteudo_cifrado`); quem decifra é o coletor.
 - Vetores de interoperabilidade: `tests/vetores/cofre_v1.json` (gerados por `tests/vetores/gerar_cofre_v1.py` com o pacote Python `cryptography`).
+
+## Worker (`cloudvista-worker`)
+
+- Lê `job_agenda` (cron do Quartz + fuso) e enfileira `job_execucao`; o coletor consome a fila com `FOR UPDATE SKIP LOCKED`. Sem broker, sem HTTP.
+- Zelador a cada minuto: jobs `EXECUTANDO` sem heartbeat além de `fila.timeout_execucao_min` voltam para `PENDENTE` (até `fila.max_tentativas`) ou viram `ERRO`.
+- Coolify: build context = raiz do repositório, Dockerfile = `worker/Dockerfile`, sem porta/domínio. Variáveis: `ConnectionStrings__CloudVista` (usuário `svc_cv_worker`), `DOTNET_ENVIRONMENT=Production`, `TZ=America/Sao_Paulo`.
 
 ## Regras
 

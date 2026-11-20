@@ -1,17 +1,24 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, KeyRound, ShieldCheck, Upload } from 'lucide-react';
 import Modal from '../../components/common/Modal';
 import { useCurrentUser } from '../../components/auth/AuthGuard';
 import { mensagemDeErro } from '../../services/api';
 import type { ContaCloud } from '../../services/contas';
 import {
-  alterarAtivoCredencial, auditoriaCredencial, obterCredencial, salvarCredencial, testarCredencial,
-  type AuditoriaItem, type CredencialMetadados, type TipoCredencial,
+  alterarAtivoCredencial, auditoriaCredencial, obterCredencial, obterJob, salvarCredencial, testarCredencial,
+  type AuditoriaItem, type CredencialMetadados, type StatusJob, type TipoCredencial,
 } from '../../services/credencial';
 import { ACOES_AUDITORIA, infoTipo, ONBOARDING, STATUS, tiposDoProvedor } from './credenciais';
 import { PROVEDORES } from './provedores';
 
 const TAMANHO_MAXIMO_ARQUIVO = 16 * 1024;
+const INTERVALO_POLLING_MS = 3000;
+const MAX_CONSULTAS = 40; // ~2 minutos
+const STATUS_FINAIS: StatusJob[] = ['CONCLUIDO', 'ERRO', 'CANCELADO', 'IMPORTADO'];
+const NOME_STATUS_JOB: Record<StatusJob, string> = {
+  PENDENTE: 'na fila', EXECUTANDO: 'em execução', COLETADO: 'coletado', IMPORTANDO: 'importando',
+  IMPORTADO: 'importado', CONCLUIDO: 'concluído', ERRO: 'falhou', CANCELADO: 'cancelado',
+};
 const dataHora = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 const formatar = (iso: string | null) => (iso ? dataHora.format(new Date(iso)) : '—');
 
@@ -42,6 +49,14 @@ const CredencialModal: React.FC<Props> = ({ conta, onFechar, onAlterado }) => {
   const [valores, setValores] = useState<Record<string, string>>({});
   const [mostrando, setMostrando] = useState<string | null>(null);
   const [aceite, setAceite] = useState(false);
+  const polling = useRef<number | null>(null);
+
+  const pararPolling = () => {
+    if (polling.current !== null) window.clearTimeout(polling.current);
+    polling.current = null;
+  };
+
+  useEffect(() => pararPolling, []);
 
   const limparFormulario = () => {
     setValores({});
@@ -63,6 +78,7 @@ const CredencialModal: React.FC<Props> = ({ conta, onFechar, onAlterado }) => {
   }, []);
 
   useEffect(() => {
+    pararPolling();
     limparFormulario();
     setAviso(null);
     setMeta(null);
@@ -76,6 +92,7 @@ const CredencialModal: React.FC<Props> = ({ conta, onFechar, onAlterado }) => {
   if (!conta) return null;
 
   const fechar = () => {
+    pararPolling();
     limparFormulario();
     setEditando(false);
     onFechar();
@@ -129,13 +146,34 @@ const CredencialModal: React.FC<Props> = ({ conta, onFechar, onAlterado }) => {
     setErro(null);
     try {
       const r = await testarCredencial(conta.id);
-      setAviso(r.mensagem);
+      setAviso(`${r.mensagem} (job #${r.jobId}: na fila)`);
       await carregar(conta.id);
+      acompanharJob(conta.id, r.jobId, 0);
     } catch (err) {
       setErro(mensagemDeErro(err));
     } finally {
       setOcupado(false);
     }
+  };
+
+  /** Acompanha o job de teste por polling até um estado final (ou ~2 min). */
+  const acompanharJob = (contaId: number, jobId: number, consultas: number) => {
+    polling.current = window.setTimeout(async () => {
+      try {
+        const job = await obterJob(jobId);
+        const final = STATUS_FINAIS.includes(job.status);
+        setAviso(`Teste da conexão (job #${jobId}): ${NOME_STATUS_JOB[job.status] ?? job.status}${job.erro ? ` · ${job.erro}` : ''}.`);
+        if (final) {
+          await carregar(contaId);
+          onAlterado();
+          return;
+        }
+        if (consultas + 1 < MAX_CONSULTAS) acompanharJob(contaId, jobId, consultas + 1);
+        else setAviso(`O teste (job #${jobId}) continua na fila. Ele aparecerá no histórico quando o coletor terminar.`);
+      } catch {
+        /* falha transitória no polling: não interrompe a tela */
+      }
+    }, INTERVALO_POLLING_MS);
   };
 
   const alternarAtivo = async () => {

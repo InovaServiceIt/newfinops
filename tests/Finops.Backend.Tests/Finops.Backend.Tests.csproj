@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\backend\Finops.Backend.csproj" />
+    <ProjectReference Include="..\..\worker\CloudVista.Worker.csproj" />
   </ItemGroup>
 
 </Project>

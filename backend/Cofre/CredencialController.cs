@@ -76,12 +76,12 @@ public sealed class CredencialController(CofreServico cofre, UsuarioAtualServico
     public async Task<IActionResult> AlterarAtivo(long contaId, [FromBody] AtivoCredencialEntrada entrada, CancellationToken ct) =>
         Ok(await cofre.AlterarAtivoAsync(await UsuarioAsync(ct), contaId, entrada.Ativo, ct));
 
-    /// <summary>Registra o pedido de teste (execução real no MD 0.5, via fila do MD 0.4).</summary>
+    /// <summary>Enfileira o teste da credencial (job TESTE_CREDENCIAL); a execução é do coletor (MD 0.5).</summary>
     [HttpPost("testar")]
     public async Task<IActionResult> Testar(long contaId, CancellationToken ct)
     {
-        await cofre.SolicitarTesteAsync(await UsuarioAsync(ct), contaId, ct);
-        return StatusCode(StatusCodes.Status202Accepted, new { mensagem = "Teste registrado. Ele será executado quando o coletor estiver ativo." });
+        var jobId = await cofre.SolicitarTesteAsync(await UsuarioAsync(ct), contaId, ct);
+        return StatusCode(StatusCodes.Status202Accepted, new { jobId, mensagem = "Teste enfileirado. Ele será executado pelo coletor." });
     }
 
     [HttpGet("auditoria")]

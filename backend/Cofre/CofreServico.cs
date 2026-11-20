@@ -79,6 +79,16 @@ WHERE cloud_conta_id = @conta_id";
 INSERT INTO credencial_auditoria (cloud_conta_id, credencial_id, acao, detalhe, usuario_id, origem)
 VALUES (@conta_id, @credencial_id, @acao, @detalhe, @usuario_id, 'API')";
 
+    /// <summary>
+    /// Enfileira o teste da credencial. ON CONFLICT DO NOTHING: o índice único parcial (conta, tipo)
+    /// em PENDENTE/EXECUTANDO impede dois testes em andamento → sem linha retornada = já existe.
+    /// </summary>
+    public const string EnfileirarTeste = @"
+INSERT INTO job_execucao (tipo_job, cliente_id, cloud_conta_id, origem, solicitado_por, prioridade)
+VALUES ('TESTE_CREDENCIAL', @cliente_id, @conta_id, 'MANUAL', @usuario_id, 10)
+ON CONFLICT DO NOTHING
+RETURNING id";
+
     public const string Auditoria = @"
 SELECT a.acao, a.detalhe, u.nome, a.origem, a.ocorrido_em
 FROM credencial_auditoria a
@@ -184,18 +194,32 @@ public sealed class CofreServico
             return await LerMetadadosAsync(conn, tx, contaId, ct);
         }, ct);
 
-    /// <summary>Registra o pedido de teste (a execução real vem no MD 0.5).</summary>
-    public Task SolicitarTesteAsync(UsuarioAtual usuario, long contaId, CancellationToken ct) =>
+    /// <summary>
+    /// Enfileira um job TESTE_CREDENCIAL (MANUAL, prioridade 10) + auditoria TESTE_SOLICITADO.
+    /// Retorna o id do job. Teste já em andamento → 409.
+    /// </summary>
+    public Task<long> SolicitarTesteAsync(UsuarioAtual usuario, long contaId, CancellationToken ct) =>
         _db.ExecutarComContextoAsync(usuario, async (conn, tx) =>
         {
-            await ContaAsync(conn, tx, contaId, ct);
+            var (clienteId, _, _) = await ContaAsync(conn, tx, contaId, ct);
             var existente = await CredencialIdAsync(conn, tx, contaId, ct)
                 ?? throw ErroNegocioException.Conflito("Cadastre uma credencial antes de testar a conexão.");
             if (existente.Status == StatusCredencial.Desativada)
                 throw ErroNegocioException.Conflito("A credencial está desativada. Reative-a antes de testar.");
 
-            await AuditarAsync(conn, tx, contaId, existente.Id, "TESTE_SOLICITADO", null, usuario.Id, ct);
-            return true;
+            long jobId;
+            await using (var cmd = new NpgsqlCommand(CofreSql.EnfileirarTeste, conn, tx))
+            {
+                cmd.Parameters.Add(new NpgsqlParameter("cliente_id", NpgsqlDbType.Bigint) { Value = clienteId });
+                cmd.Parameters.Add(new NpgsqlParameter("conta_id", NpgsqlDbType.Bigint) { Value = contaId });
+                cmd.Parameters.Add(new NpgsqlParameter("usuario_id", NpgsqlDbType.Bigint) { Value = usuario.Id });
+                jobId = await cmd.ExecuteScalarAsync(ct) is long id
+                    ? id
+                    : throw ErroNegocioException.Conflito("Já existe um teste em andamento para esta conta.");
+            }
+
+            await AuditarAsync(conn, tx, contaId, existente.Id, "TESTE_SOLICITADO", $"job {jobId}", usuario.Id, ct);
+            return jobId;
         }, ct);
 
     public Task<List<AuditoriaItem>> AuditoriaAsync(UsuarioAtual usuario, long contaId, CancellationToken ct) =>

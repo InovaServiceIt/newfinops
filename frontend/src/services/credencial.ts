@@ -36,6 +36,20 @@ export const alterarAtivoCredencial = (contaId: number, ativo: boolean) =>
   apiSend<CredencialMetadados>('PATCH', `${base(contaId)}/ativo`, { ativo });
 
 export const testarCredencial = (contaId: number) =>
-  apiSend<{ mensagem: string }>('POST', `${base(contaId)}/testar`, {});
+  apiSend<{ jobId: number; mensagem: string }>('POST', `${base(contaId)}/testar`, {});
+
+export type StatusJob = 'PENDENTE' | 'EXECUTANDO' | 'COLETADO' | 'IMPORTANDO' | 'IMPORTADO' | 'CONCLUIDO' | 'ERRO' | 'CANCELADO';
+
+export interface JobSituacao {
+  id: number;
+  tipoJob: string;
+  status: StatusJob;
+  criadoEm: string;
+  iniciadoEm: string | null;
+  finalizadoEm: string | null;
+  erro: string | null;
+}
+
+export const obterJob = (id: number) => apiGet<JobSituacao>(`/api/jobs/${id}`);
 
 export const auditoriaCredencial = (contaId: number) => apiGet<AuditoriaItem[]>(`${base(contaId)}/auditoria`);
