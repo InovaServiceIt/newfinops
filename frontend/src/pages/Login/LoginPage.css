@@ -88,14 +88,13 @@
 
 .login-brand-icon {
   color: var(--accent);
-  fill: currentColor;
 }
 
 .login-brand-name {
   font-family: var(--font-display);
   font-size: var(--font-size-xl);
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 0.3px;
   color: var(--text);
 }
 

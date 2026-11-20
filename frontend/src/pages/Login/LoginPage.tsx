@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cloud, Globe, Shield, Zap } from 'lucide-react';
+import { Cloud, Globe, Settings, Shield } from 'lucide-react';
 import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
@@ -23,12 +23,12 @@ const LoginPage: React.FC = () => {
 
         <div className="login-card-body">
           <div className="login-brand">
-            <Zap size={28} className="login-brand-icon" />
-            <span className="login-brand-name">FINOPS</span>
+            <Settings size={28} className="login-brand-icon" />
+            <span className="login-brand-name">CloudVista</span>
           </div>
-          <h1>Bem-vindo ao FinOps!</h1>
+          <h1>Bem-vindo ao CloudVista!</h1>
           <p className="login-text">
-            Faça login com sua conta corporativa para acessar a plataforma FinOps da Service IT.
+            Faça login com sua conta corporativa para acessar o CloudVista, a plataforma FinOps da Service IT.
           </p>
 
           <button type="button" onClick={handleLogin} className="login-button">
@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
             Entrar com Microsoft Service IT
           </button>
 
-          <p className="login-footer">© 2026 Service IT • FinOps</p>
+          <p className="login-footer">© 2026 Service IT • CloudVista</p>
         </div>
       </div>
 
