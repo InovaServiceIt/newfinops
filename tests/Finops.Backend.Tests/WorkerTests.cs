@@ -156,6 +156,20 @@ public class WorkerTests
     }
 
     [Fact]
+    public void Diagnostico_loga_mensagem_so_de_excecao_npgsql_e_corta()
+    {
+        var conexao = new Npgsql.NpgsqlException("Failed to connect to 10.0.0.5:5432", new System.Net.Sockets.SocketException(10060));
+        Assert.Contains("Failed to connect to 10.0.0.5:5432", Diagnostico.De(conexao));
+        Assert.Contains("SocketException", Diagnostico.De(conexao));
+
+        // A de parse da connection string (ecoa a senha) nunca entra: só o tipo é logado.
+        Assert.Equal("-", Diagnostico.De(new ArgumentException("Couldn't set SEGREDO_TESTE;password")));
+        Assert.Equal("-", Diagnostico.De(new InvalidOperationException("x")));
+
+        Assert.True(Diagnostico.De(new Npgsql.NpgsqlException(new string('a', 1000))).Length <= Diagnostico.Limite);
+    }
+
+    [Fact]
     public void Zelador_so_mexe_em_jobs_ainda_executando()
     {
         Assert.Contains("FOR UPDATE SKIP LOCKED", WorkerSql.ExecutandoParaZelador);

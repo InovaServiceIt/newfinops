@@ -83,3 +83,14 @@ def meses_de_custo(custo: dict | None) -> int:
                 if mes:
                     meses.add(mes)
     return len(meses)
+
+
+# Backoff das tentativas de conexão ao banco (segundos): 2 → 5 → 15 → 30 → 60 (teto).
+BACKOFF_CONEXAO = (2, 5, 15, 30, 60)
+
+
+def atraso_reconexao(tentativa: int) -> int:
+    """Atraso antes da tentativa N (1 = primeira falha)."""
+    if tentativa < 1:
+        return BACKOFF_CONEXAO[0]
+    return BACKOFF_CONEXAO[min(tentativa, len(BACKOFF_CONEXAO)) - 1]

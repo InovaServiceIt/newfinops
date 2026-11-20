@@ -115,7 +115,7 @@ def test_sql_sem_select_estrela_e_parametrizado():
     "erro no request Authorization: Signature SEGREDO_TESTE_b",
     f"chave inválida {PEM}",
     "client_secret=SEGREDO_TESTE_c inválido",
-    "password authentication failed SEGREDO_TESTE_d",
+    "conexão recusada password=SEGREDO_TESTE_d",
     "token=SEGREDO_TESTE_e expirado",
     "aws_secret SEGREDO_TESTE_f",
 ])

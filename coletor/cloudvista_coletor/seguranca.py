@@ -13,11 +13,17 @@ LIMITE_TESTE = 300
 LIMITE_ERRO = 1000
 
 # A partir da primeira ocorrência destas palavras (sem diferenciar maiúsculas), o resto é descartado.
+# "password"/"senha" só disparam como atribuição (password=..., senha: ...): assim mensagens de
+# diagnóstico como 'password authentication failed for user "x"' continuam legíveis.
 _GATILHOS = re.compile(
-    r"(key_content|pass_?phrase|secret|password|passwd|senha|private|-----BEGIN|authorization|"
+    r"(key_content|pass_?phrase|secret|password\s*[=:]|passwd\s*[=:]|senha\s*[=:]|private|-----BEGIN|authorization|"
     r"x-amz-security-token|signature|credential|token=|client_secret|access_key)",
     re.IGNORECASE,
 )
+
+# Credenciais embutidas em URL (postgresql://usuario:senha@host) e em DSN (password=...).
+_URL_COM_SENHA = re.compile(r"([a-z][a-z0-9+.-]*://[^\s:/@]+:)[^\s@]*@", re.IGNORECASE)
+_DSN_SENHA = re.compile(r"(password\s*=\s*)('[^']*'|\S+)", re.IGNORECASE)
 # Sequências longas (base64/hex) que podem ser material de chave.
 _LONGO = re.compile(r"[A-Za-z0-9+/=_-]{40,}")
 
@@ -61,3 +67,24 @@ class FiltroSanitizador(logging.Filter):
             record.exc_info = None
             record.exc_text = None
         return True
+
+
+def sanitizar_conexao(texto: object, url: str | None = None, limite: int = LIMITE_TESTE) -> str:
+    """Mensagem de falha de conexão com diagnóstico, sem segredo.
+
+    A mensagem do libpq não traz a senha, mas pode ecoar a URL em erro de parse: remove o valor
+    literal de CV_DB_URL, troca a senha de qualquer `scheme://user:senha@` e de `password=` por ***
+    e corta no limite. Mantém textos como 'password authentication failed for user "x"'.
+    """
+    try:
+        s = str(texto)
+    except Exception:  # noqa: BLE001
+        return "erro sem descrição"
+    if url:
+        s = s.replace(url, "[CV_DB_URL]")
+    s = _URL_COM_SENHA.sub(r"\1***@", s)
+    s = _DSN_SENHA.sub(r"\1***", s)
+    s = " ".join(s.split())
+    if len(s) > limite:
+        s = s[: max(limite - 1, 0)] + "…"
+    return s or "erro sem descrição"

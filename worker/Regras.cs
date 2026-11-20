@@ -98,3 +98,23 @@ public static class Json
         }
     }
 }
+
+/// <summary>
+/// Diagnóstico seguro de exceções nos jobs. NpgsqlException/PostgresException de conexão ou consulta
+/// não trazem a senha (só a ArgumentException do parse da connection string traz, e essa é tratada no
+/// WorkerDb): para elas loga a mensagem, cortada em 300. Para as demais, só o tipo.
+/// </summary>
+public static class Diagnostico
+{
+    public const int Limite = 300;
+
+    public static string De(Exception ex)
+    {
+        if (ex is not Npgsql.NpgsqlException)
+            return "-";
+        var msg = string.Join(" ", (ex.Message ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (ex.InnerException is { } inner && inner is System.Net.Sockets.SocketException or TimeoutException or System.IO.IOException)
+            msg += $" ({inner.GetType().Name}: {inner.Message})";
+        return msg.Length <= Limite ? msg : msg[..(Limite - 1)] + "…";
+    }
+}

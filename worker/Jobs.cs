@@ -70,8 +70,8 @@ public sealed class SincronizarAgendaJob(AgendaRepositorio agendas, ParametroRep
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Sem detalhes que possam conter dados: tipo da exceção (e SQLSTATE quando houver).
-            logger.LogError("Falha ao sincronizar a agenda. Tipo: {Tipo}. SQLSTATE: {SqlState}.",
-                ex.GetType().Name, (ex as Npgsql.PostgresException)?.SqlState ?? "-");
+            logger.LogError("Falha ao sincronizar a agenda. Tipo: {Tipo}. SQLSTATE: {SqlState}. Detalhe: {Detalhe}.",
+                ex.GetType().Name, (ex as Npgsql.PostgresException)?.SqlState ?? "-", Diagnostico.De(ex));
         }
     }
 
@@ -120,8 +120,8 @@ public sealed class DispararAgendaJob(AgendaRepositorio agendas, ILogger<Dispara
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogError("Falha ao disparar a agenda {AgendaId}. Tipo: {Tipo}. SQLSTATE: {SqlState}.",
-                agendaId, ex.GetType().Name, (ex as Npgsql.PostgresException)?.SqlState ?? "-");
+            logger.LogError("Falha ao disparar a agenda {AgendaId}. Tipo: {Tipo}. SQLSTATE: {SqlState}. Detalhe: {Detalhe}.",
+                agendaId, ex.GetType().Name, (ex as Npgsql.PostgresException)?.SqlState ?? "-", Diagnostico.De(ex));
         }
     }
 }
@@ -147,8 +147,8 @@ public sealed class ZeladorJob(FilaRepositorio fila, ParametroRepositorio parame
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogError("Falha no zelador da fila. Tipo: {Tipo}. SQLSTATE: {SqlState}.",
-                ex.GetType().Name, (ex as Npgsql.PostgresException)?.SqlState ?? "-");
+            logger.LogError("Falha no zelador da fila. Tipo: {Tipo}. SQLSTATE: {SqlState}. Detalhe: {Detalhe}.",
+                ex.GetType().Name, (ex as Npgsql.PostgresException)?.SqlState ?? "-", Diagnostico.De(ex));
         }
     }
 }

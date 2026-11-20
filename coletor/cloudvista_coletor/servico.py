@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from . import VERSAO, regras, sql
 from .cripto import ChavesMestras, CofreErro, aad_credencial, aad_dek, decifrar_v1, zerar
-from .seguranca import LIMITE_ERRO, LIMITE_TESTE, FiltroSanitizador, descrever_excecao, sanitizar
+from .seguranca import LIMITE_ERRO, LIMITE_TESTE, FiltroSanitizador, descrever_excecao, sanitizar, sanitizar_conexao
 from .testes_credencial import executar_teste
 
 log = logging.getLogger("cloudvista.coletor")
@@ -83,26 +83,54 @@ class Servico:
         log.info("cloudvista-collector %s iniciado (executor %s).", self.versao, self.executor)
 
         conn = None
+        falhas = 0
         while not self.parar.is_set():
             try:
                 if conn is None or conn.closed:
                     conn = self.conectar()
+                    if falhas:
+                        log.info("Conexão com o banco restabelecida após %s falha(s).", falhas)
+                    falhas = 0
                 job = self.pegar_job(conn)
                 if job is None:
                     self.parar.wait(self.parametro(conn, "coletor.intervalo_poll_seg"))
                     continue
                 self.processar(conn, job)
             except Exception as exc:  # noqa: BLE001 - nunca derruba o loop por uma falha de banco/rede
-                log.error("Falha no loop do coletor: %s", type(exc).__name__)
+                falhas += 1
+                espera = regras.atraso_reconexao(falhas)
+                log.error("Falha no loop do coletor (%s): %s. Nova tentativa em %ss.",
+                          type(exc).__name__, self.diagnostico(exc), espera)
                 if conn is not None:
                     try:
                         conn.close()
                     except Exception:  # noqa: BLE001
                         pass
                 conn = None
-                self.parar.wait(10)
+                self.parar.wait(espera)
         log.info("cloudvista-collector encerrado.")
         return 0
+
+    def diagnostico(self, exc: BaseException) -> str:
+        """Mensagem do psycopg/libpq com a URL e a senha mascaradas (≤ 300)."""
+        return sanitizar_conexao(exc, self.url_banco)
+
+    def conectar_com_backoff(self) -> bool:
+        """Primeira conexão: tenta com backoff 2 → 5 → 15 → 30 → 60 s até conseguir ou receber SIGTERM."""
+        falhas = 0
+        while not self.parar.is_set():
+            try:
+                self.conectar().close()
+                if falhas:
+                    log.info("Conectado ao banco após %s falha(s).", falhas)
+                return True
+            except Exception as exc:  # noqa: BLE001
+                falhas += 1
+                espera = regras.atraso_reconexao(falhas)
+                log.critical("Não foi possível conectar ao banco (CV_DB_URL): %s: %s. Nova tentativa em %ss.",
+                             type(exc).__name__, self.diagnostico(exc), espera)
+                self.parar.wait(espera)
+        return False
 
     def _sinal(self, numero, _frame) -> None:
         log.info("Sinal %s recebido: termina o job atual e sai.", numero)
@@ -276,9 +304,8 @@ def principal() -> int:
         return 1
 
     servico = Servico(url, chaves)
-    try:
-        servico.conectar().close()
-    except Exception as exc:  # noqa: BLE001 - a mensagem pode ecoar a URL: só o tipo
-        log.critical("Não foi possível conectar ao banco (CV_DB_URL). Tipo do erro: %s.", type(exc).__name__)
-        return 1
+    signal.signal(signal.SIGTERM, servico._sinal)  # permite sair durante o backoff inicial
+    signal.signal(signal.SIGINT, servico._sinal)
+    if not servico.conectar_com_backoff():
+        return 0
     return servico.executar()
