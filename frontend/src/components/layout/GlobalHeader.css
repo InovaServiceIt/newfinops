@@ -48,7 +48,7 @@
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.25rem;
-  letter-spacing: 1px;
+  letter-spacing: 0.3px;
   color: var(--header-text);
 }
 
