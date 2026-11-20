@@ -1,19 +1,24 @@
 import React from 'react';
 import {
-  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { useTokenValues } from '../../theme/useTokenValues';
-import type { BarraMensal, Faixa, PontoMensal } from '../../services/visaoGeral';
-import { formatBRL, formatBRLCompacto } from '../../utils/format';
+import type { ItemValor, PontoDiario, PontoMensal } from '../../services/visaoGeral';
+import { formatMoeda, formatMoedaCompacto } from '../../utils/format';
+
+export const OUTROS = 'Outros';
 
 /** Tokens usados pelos gráficos (recharts precisa de cor resolvida, não var()). */
 const TOKENS = [
-  '--accent', '--accent-2', '--success', '--warning', '--danger', '--chart-grid',
-  '--text', '--text-muted', '--bg', '--border-strong', '--surface-hover',
+  '--chart-s1', '--chart-s2', '--chart-s3', '--chart-s4', '--chart-s5', '--chart-s6', '--chart-s7', '--chart-s8',
+  '--chart-outros', '--chart-grid', '--text', '--text-muted', '--bg', '--surface', '--border-strong', '--surface-hover',
 ] as const;
+const SLOTS = TOKENS.slice(0, 8);
+
+type Tema = Record<(typeof TOKENS)[number], string>;
 
 function useChartTheme() {
-  const t = useTokenValues(TOKENS);
+  const t = useTokenValues(TOKENS) as Tema;
   return {
     t,
     eixo: { fill: t['--text-muted'], fontSize: 12 },
@@ -29,104 +34,105 @@ function useChartTheme() {
       itemStyle: { color: t['--text'] },
       cursor: { fill: t['--surface-hover'] },
     },
+    legenda: {
+      wrapperStyle: { fontSize: 12, paddingTop: 8 },
+      // Texto da legenda em tinta de texto; a cor do serviço fica só no marcador.
+      formatter: (valor: string) => <span style={{ color: t['--text-muted'] }}>{valor}</span>,
+    },
   };
 }
 
-export function corDaFaixa(faixa: Faixa, t: Record<(typeof TOKENS)[number], string>): string {
-  switch (faixa) {
-    case 'ok': return t['--success'];
-    case 'atencao': return t['--warning'];
-    case 'acima': return t['--danger'];
-    default: return t['--accent'];
-  }
+/**
+ * Cor segue o serviço (não a posição): a ordem vem do ranking de 12 meses e os
+ * demais serviços vistos nos outros gráficos pegam os slots livres. "Outros" é cinza.
+ */
+export function mapaDeCores(ordem: string[][]): Map<string, number> {
+  const mapa = new Map<string, number>();
+  for (const lista of ordem)
+    for (const nome of lista)
+      if (nome !== OUTROS && !mapa.has(nome) && mapa.size < SLOTS.length) mapa.set(nome, mapa.size);
+  return mapa;
 }
 
-const ALTURA = 260;
+function cor(nome: string, mapa: Map<string, number>, t: Tema): string {
+  const i = mapa.get(nome);
+  return i === undefined ? t['--chart-outros'] : t[SLOTS[i]];
+}
 
-// ── Custo mensal (barras coloridas vs orçamento) ───────────────────────────
-export const GraficoCustoMensal: React.FC<{ dados: BarraMensal[] }> = ({ dados }) => {
-  const { t, eixo, tooltip } = useChartTheme();
+const ALTURA = 280;
+
+// ── Mensal empilhado por serviço (12 meses) ─────────────────────────────────
+export const GraficoMensal: React.FC<{ dados: PontoMensal[]; servicos: string[]; moeda: string; cores: Map<string, number> }> = ({
+  dados, servicos, moeda, cores,
+}) => {
+  const { t, eixo, tooltip, legenda } = useChartTheme();
+  const linhas = dados.map((p) => ({ rotulo: p.parcial ? `${p.rotulo}*` : p.rotulo, total: p.total, ...p.valores }));
   return (
-    <ResponsiveContainer width="100%" height={ALTURA}>
-      <BarChart data={dados} margin={{ top: 8, right: 24, bottom: 0, left: 8 }}>
-        <CartesianGrid vertical={false} stroke={t['--chart-grid']} />
-        <XAxis dataKey="rotulo" tick={eixo} axisLine={false} tickLine={false} interval={0}
-          tickFormatter={(r: string) => (r.startsWith('Projeção') ? 'Projeção' : r)} />
-        <YAxis tick={eixo} axisLine={false} tickLine={false} tickFormatter={formatBRLCompacto} width={80} />
-        <Tooltip {...tooltip} formatter={(v: number) => [formatBRL(v), 'Custo']} />
-        <Bar dataKey="valor" radius={[4, 4, 0, 0]} maxBarSize={48} isAnimationActive={false}>
-          {dados.map((b) => {
-            const cor = corDaFaixa(b.faixa, t);
-            return (
-              <Cell
-                key={`${b.ano}-${b.mes}-${b.projecao}`}
-                fill={cor}
-                fillOpacity={b.projecao ? 0.35 : 1}
-                stroke={b.projecao ? cor : undefined}
-                strokeDasharray={b.projecao ? '4 3' : undefined}
-              />
-            );
-          })}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
-  );
-};
-
-/** Legenda explícita das cores do gráfico mensal. */
-export const LegendaFaixas: React.FC<{ temOrcamento: boolean; temProjecao: boolean }> = ({ temOrcamento, temProjecao }) => (
-  <div className="vg-legenda">
-    {temOrcamento ? (
-      <>
-        <span><i className="vg-legenda-cor vg-cor-ok" />≤ 90% do orçamento mensal</span>
-        <span><i className="vg-legenda-cor vg-cor-atencao" />90% a 100%</span>
-        <span><i className="vg-legenda-cor vg-cor-acima" />&gt; 100%</span>
-      </>
-    ) : (
-      <span><i className="vg-legenda-cor vg-cor-sem" />Custo (sem orçamento cadastrado)</span>
-    )}
-    {temProjecao && <span><i className="vg-legenda-cor vg-legenda-projecao" />Projeção do mês atual</span>}
-  </div>
-);
-
-// ── Últimos 12 meses (área) ───────────────────────────────────────────────
-export const GraficoUltimosMeses: React.FC<{ dados: PontoMensal[] }> = ({ dados }) => {
-  const { t, eixo, tooltip } = useChartTheme();
-  return (
-    <ResponsiveContainer width="100%" height={ALTURA}>
-      <AreaChart data={dados} margin={{ top: 8, right: 24, bottom: 0, left: 8 }}>
-        <defs>
-          <linearGradient id="vg-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={t['--accent-2']} stopOpacity={0.35} />
-            <stop offset="100%" stopColor={t['--accent-2']} stopOpacity={0.02} />
-          </linearGradient>
-        </defs>
+    <ResponsiveContainer width="100%" height={ALTURA + 40}>
+      <BarChart data={linhas} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
         <CartesianGrid vertical={false} stroke={t['--chart-grid']} />
         <XAxis dataKey="rotulo" tick={eixo} axisLine={false} tickLine={false} interval={0} />
-        <YAxis tick={eixo} axisLine={false} tickLine={false} tickFormatter={formatBRLCompacto} width={80} />
-        <Tooltip
-          {...tooltip}
-          formatter={(v: number, _n, item) => [formatBRL(v), item?.payload?.parcial ? 'Custo (mês em curso)' : 'Custo']}
-        />
-        <Area type="monotone" dataKey="valor" stroke={t['--accent-2']} strokeWidth={2} fill="url(#vg-area)"
-          dot={{ r: 3, fill: t['--accent-2'] }} activeDot={{ r: 5 }} isAnimationActive={false} />
-      </AreaChart>
+        <YAxis tick={eixo} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatMoedaCompacto(v, moeda)} width={84} />
+        <Tooltip {...tooltip} formatter={(v: number, n: string) => [formatMoeda(v, moeda), n]} />
+        <Legend {...legenda} />
+        {servicos.map((s, i) => (
+          <Bar key={s} dataKey={s} name={s} stackId="m" fill={cor(s, cores, t)} stroke={t['--surface']} strokeWidth={1}
+            maxBarSize={44} isAnimationActive={false} radius={i === servicos.length - 1 ? [4, 4, 0, 0] : undefined} />
+        ))}
+      </BarChart>
     </ResponsiveContainer>
   );
 };
 
-// ── Custo diário (barras) ─────────────────────────────────────────────────
-export const GraficoCustoDiario: React.FC<{ dados: { dia: number; valor: number }[] }> = ({ dados }) => {
-  const { t, eixo, tooltip } = useChartTheme();
+// ── Donut por serviço (mês corrente) ────────────────────────────────────────
+export const GraficoDonut: React.FC<{ itens: ItemValor[]; moeda: string; cores: Map<string, number> }> = ({ itens, moeda, cores }) => {
+  const { t, tooltip } = useChartTheme();
+  const total = itens.reduce((s, i) => s + i.valor, 0);
+  const positivos = itens.filter((i) => i.valor > 0);
   return (
-    <ResponsiveContainer width="100%" height={ALTURA}>
-      <BarChart data={dados} margin={{ top: 8, right: 24, bottom: 0, left: 8 }}>
+    <div className="vg-donut">
+      <ResponsiveContainer width="100%" height={ALTURA}>
+        <PieChart>
+          <Tooltip {...tooltip} formatter={(v: number, n: string) => [formatMoeda(v, moeda), n]} />
+          <Pie data={positivos} dataKey="valor" nameKey="nome" innerRadius="58%" outerRadius="88%" paddingAngle={1}
+            stroke={t['--surface']} strokeWidth={2} isAnimationActive={false}>
+            {positivos.map((i) => <Cell key={i.nome} fill={cor(i.nome, cores, t)} />)}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      <ul className="vg-donut-legenda">
+        {itens.map((i) => (
+          <li key={i.nome}>
+            <i className="vg-legenda-cor" style={{ background: cor(i.nome, cores, t) }} />
+            <span className="vg-donut-nome" title={i.nome}>{i.nome}</span>
+            <span className="vg-donut-valor">{formatMoeda(i.valor, moeda)}</span>
+            <span className="vg-donut-pct">{total > 0 ? `${((i.valor / total) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+// ── Linha diária (30 dias, top 5 + Outros) ──────────────────────────────────
+export const GraficoDiario: React.FC<{ dados: PontoDiario[]; servicos: string[]; moeda: string; cores: Map<string, number> }> = ({
+  dados, servicos, moeda, cores,
+}) => {
+  const { t, eixo, tooltip, legenda } = useChartTheme();
+  const linhas = dados.map((p) => ({ dia: `${p.dia.slice(8, 10)}/${p.dia.slice(5, 7)}`, ...p.valores }));
+  return (
+    <ResponsiveContainer width="100%" height={ALTURA + 40}>
+      <LineChart data={linhas} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
         <CartesianGrid vertical={false} stroke={t['--chart-grid']} />
-        <XAxis dataKey="dia" tick={eixo} axisLine={false} tickLine={false} />
-        <YAxis tick={eixo} axisLine={false} tickLine={false} tickFormatter={formatBRLCompacto} width={80} />
-        <Tooltip {...tooltip} labelFormatter={(d) => `Dia ${d}`} formatter={(v: number) => [formatBRL(v), 'Custo']} />
-        <Bar dataKey="valor" fill={t['--accent']} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />
-      </BarChart>
+        <XAxis dataKey="dia" tick={eixo} axisLine={false} tickLine={false} minTickGap={16} />
+        <YAxis tick={eixo} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatMoedaCompacto(v, moeda)} width={84} />
+        <Tooltip {...tooltip} cursor={{ stroke: t['--border-strong'] }} formatter={(v: number, n: string) => [formatMoeda(v, moeda), n]} />
+        <Legend {...legenda} />
+        {servicos.map((s) => (
+          <Line key={s} type="monotone" dataKey={s} name={s} stroke={cor(s, cores, t)} strokeWidth={2}
+            dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />
+        ))}
+      </LineChart>
     </ResponsiveContainer>
   );
 };

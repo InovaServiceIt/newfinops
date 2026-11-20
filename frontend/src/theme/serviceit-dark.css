@@ -65,6 +65,16 @@
   --chart-oci: #fb7185;
   --chart-forecast: #c4b5fd;
   --chart-grid: rgba(255, 255, 255, 0.08);
+  /* Série categórica (ordem fixa; validada p/ daltonismo). */
+  --chart-s1: #3987e5;
+  --chart-s2: #d95926;
+  --chart-s3: #199e70;
+  --chart-s4: #c98500;
+  --chart-s5: #d55181;
+  --chart-s6: #0ca30c;
+  --chart-s7: #9085e9;
+  --chart-s8: #e66767;
+  --chart-outros: #7b8794;
 
   /* Efeitos */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);

@@ -8,14 +8,16 @@ import ContasAba from './ContasAba';
 import AgendaAba from './AgendaAba';
 import ParametrosAba from './ParametrosAba';
 import UsuariosAba from './UsuariosAba';
+import FatorAba from './FatorAba';
 import './ConfiguracoesPage.css';
 
-type Aba = 'clientes' | 'usuarios' | 'contas' | 'agenda' | 'parametros';
+type Aba = 'clientes' | 'usuarios' | 'contas' | 'fator' | 'agenda' | 'parametros';
 
 const ABAS: { id: Aba; rotulo: string }[] = [
   { id: 'clientes', rotulo: 'Clientes' },
   { id: 'usuarios', rotulo: 'Usuários' },
   { id: 'contas', rotulo: 'Contas de cloud' },
+  { id: 'fator', rotulo: 'Fator do cliente' },
   { id: 'agenda', rotulo: 'Agenda' },
   { id: 'parametros', rotulo: 'Parâmetros' },
 ];
@@ -42,6 +44,7 @@ const ConfiguracoesPage: React.FC = () => {
       {aba === 'clientes' && <ClientesAba />}
       {aba === 'usuarios' && <UsuariosAba />}
       {aba === 'contas' && <ContasAba />}
+      {aba === 'fator' && <FatorAba />}
       {aba === 'agenda' && <AgendaAba />}
       {aba === 'parametros' && <ParametrosAba />}
     </div>

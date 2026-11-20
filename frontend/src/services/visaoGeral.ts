@@ -1,120 +1,95 @@
-import { apiGet } from './api';
+import { apiGet, apiSend } from './api';
 
-// Cliente da API /api/visao-geral (tipos espelham os DTOs do backend).
+// Cliente de /api/visao-geral e /api/fator-cliente (tipos espelham os DTOs do backend).
 
-export interface ProvedorOpcao {
-  id: number;
-  tipo: string;
-  nome: string | null;
-  cliente: string | null;
-  rotulo: string;
-}
-
-export interface OpcoesVisaoGeral {
-  provedores: ProvedorOpcao[];
-  provedorSelecionado: number | null;
-  anos: number[];
-  servicos: string[];
-  skus: string[];
-  regioes: string[];
-  fator: number | null;
-}
-
-export interface Indicador {
-  valor: number | null;
-  percentualOrcamento: number | null;
-  referencia: string | null;
-}
-
-export type Faixa = 'ok' | 'atencao' | 'acima' | 'sem_orcamento';
-
-export interface BarraMensal {
-  ano: number;
-  mes: number;
-  rotulo: string;
-  valor: number;
-  projecao: boolean;
-  faixa: Faixa;
+export interface Kpis {
+  mesCorrente: number;
+  mesAnterior: number;
+  ytd: number;
+  previsaoMes: number;
+  creditosMes: number;
 }
 
 export interface PontoMensal {
-  ano: number;
-  mes: number;
+  mes: string;
   rotulo: string;
-  valor: number;
   parcial: boolean;
+  valores: Record<string, number>;
+  total: number;
 }
 
-export interface ItemRanking {
+export interface PontoDiario {
+  dia: string;
+  valores: Record<string, number>;
+}
+
+export interface ItemValor {
   nome: string;
   valor: number;
+  detalhe: string | null;
 }
 
-export interface BlocoPeriodo {
-  inicio: string;
-  fim: string;
-  total: number;
-  topServicos: ItemRanking[];
-  topSkus: ItemRanking[];
-  topRegioes: ItemRanking[];
+export interface VisaoMoeda {
+  moeda: string;
+  kpis: Kpis;
+  servicosMensal: string[];
+  mensal: PontoMensal[];
+  donut: ItemValor[];
+  servicosDiario: string[];
+  diario: PontoDiario[];
+  topCompartimentos: ItemValor[];
+  topRecursos: ItemValor[];
 }
 
 export interface VisaoGeral {
-  provedor: number;
-  nomeProvedor: string | null;
-  ano: number;
+  clienteId: number;
+  contaId: number | null;
+  hoje: string;
+  dadosAte: string | null;
+  ultimoJob: number | null;
+  ultimaImportacao: string | null;
   comFator: boolean;
-  fator: number | null;
-  referencias: {
-    hoje: string;
-    mesAtual: string;
-    ultimoMesFechado: string;
-    semanaAnteriorInicio: string;
-    semanaAnteriorFim: string;
-    ontem: string;
-  };
-  orcamentoMensal: number | null;
-  indicadores: {
-    orcamentoAnual: Indicador;
-    acumuladoAno: Indicador;
-    ultimoMes: Indicador;
-    mesAtual: Indicador;
-    projecaoMes: Indicador;
-    projecaoAnual: Indicador;
-  };
-  custoMensal: BarraMensal[];
-  ultimosDozeMeses: PontoMensal[];
-  semanaAnterior: BlocoPeriodo;
-  diaAnterior: BlocoPeriodo;
-  custoDiario: { dia: number; valor: number }[];
+  fatorDisponivel: boolean;
+  fatorAtual: number | null;
+  vazio: boolean;
+  moedas: VisaoMoeda[];
 }
 
 export interface FiltrosVisaoGeral {
-  provedor: number;
-  ano: number;
-  meses: number[];
-  servicos: string[];
-  skus: string[];
-  regioes: string[];
+  clienteId: number;
+  contaId: number | null;
   comFator: boolean;
 }
 
-export { ApiError } from './api';
-const getJson = apiGet;
-
-export function buscarOpcoes(provedor: number | null, signal?: AbortSignal): Promise<OpcoesVisaoGeral> {
-  const qs = provedor ? `?provedor=${provedor}` : '';
-  return getJson<OpcoesVisaoGeral>(`/api/visao-geral/opcoes${qs}`, signal);
-}
-
 export function buscarVisaoGeral(f: FiltrosVisaoGeral, signal?: AbortSignal): Promise<VisaoGeral> {
-  const qs = new URLSearchParams();
-  qs.set('provedor', String(f.provedor));
-  qs.set('ano', String(f.ano));
-  qs.set('comFator', String(f.comFator));
-  f.meses.forEach((m) => qs.append('meses', String(m)));
-  f.servicos.forEach((s) => qs.append('servicos', s));
-  f.skus.forEach((s) => qs.append('skus', s));
-  f.regioes.forEach((s) => qs.append('regioes', s));
-  return getJson<VisaoGeral>(`/api/visao-geral?${qs.toString()}`, signal);
+  const qs = new URLSearchParams({ clienteId: String(f.clienteId), comFator: String(f.comFator) });
+  if (f.contaId) qs.set('contaId', String(f.contaId));
+  return apiGet<VisaoGeral>(`/api/visao-geral?${qs.toString()}`, signal);
 }
+
+// ── Fator do cliente ──
+export interface FatorCliente {
+  id: number;
+  clienteId: number;
+  clienteNome: string | null;
+  cloudContaId: number | null;
+  contaNome: string | null;
+  fator: number;
+  vigenteDesde: string;
+  vigenteAte: string | null;
+  criadoEm: string;
+  criadoPor: string | null;
+}
+
+export interface FatorEntrada {
+  clienteId: number | null;
+  cloudContaId: number | null;
+  fator: number | null;
+  vigenteDesde: string | null;
+  vigenteAte: string | null;
+}
+
+export const listarFatores = (clienteId?: number | null) =>
+  apiGet<FatorCliente[]>(`/api/fator-cliente${clienteId ? `?clienteId=${clienteId}` : ''}`);
+export const criarFator = (f: FatorEntrada) => apiSend<FatorCliente>('POST', '/api/fator-cliente', f);
+export const atualizarFator = (id: number, f: FatorEntrada) => apiSend<FatorCliente>('PUT', `/api/fator-cliente/${id}`, f);

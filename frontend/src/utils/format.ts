@@ -22,3 +22,37 @@ export function formatData(iso: string): string {
   const [ano, mes, dia] = iso.split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
+const cacheMoeda = new Map<string, Intl.NumberFormat>();
+function formatador(moeda: string, compacto: boolean): Intl.NumberFormat {
+  const chave = `${moeda}|${compacto}`;
+  let f = cacheMoeda.get(chave);
+  if (!f) {
+    try {
+      f = new Intl.NumberFormat('pt-BR', compacto
+        ? { style: 'currency', currency: moeda, notation: 'compact', maximumFractionDigits: 1 }
+        : { style: 'currency', currency: moeda, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch {
+      // Código fora do ISO 4217: número com o código ao lado.
+      f = new Intl.NumberFormat('pt-BR', compacto
+        ? { notation: 'compact', maximumFractionDigits: 1 }
+        : { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    cacheMoeda.set(chave, f);
+  }
+  return f;
+}
+
+/** Valor na moeda recebida (sem conversão): R$ 1.234,56 · US$ 12,00. */
+export function formatMoeda(valor: number | null | undefined, moeda: string): string {
+  if (valor === null || valor === undefined) return '—';
+  const f = formatador(moeda, false);
+  const s = f.format(valor);
+  return f.resolvedOptions().style === 'currency' ? s : `${moeda} ${s}`;
+}
+
+export function formatMoedaCompacto(valor: number, moeda: string): string {
+  const f = formatador(moeda, true);
+  const s = f.format(valor);
+  return f.resolvedOptions().style === 'currency' ? s : `${moeda} ${s}`;
+}

@@ -39,7 +39,7 @@ Para testar o fluxo completo de SSO, o mais simples é gerar o build do frontend
 ## Testes
 
 ```bash
-dotnet test tests/Finops.Backend.Tests   # regras de datas, projeções e montagem da Visão Geral (sem banco)
+dotnet test tests/Finops.Backend.Tests   # regras (identidade, cofre, worker, importador, Visão Geral sobre custo_fato, fator do cliente) — sem banco
 ```
 
 ## Docker

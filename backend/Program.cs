@@ -93,8 +93,7 @@ builder.Services.AddSingleton<Finops.Backend.Cofre.CofreServico>();
 // ── Visão Geral ──
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<Finops.Backend.VisaoGeral.VisaoGeralRepositorio>();
-builder.Services.AddSingleton<Finops.Backend.VisaoGeral.VisaoGeralServico>();
+builder.Services.AddSingleton<Finops.Backend.Custos.CustosRepositorio>();
 
 // ── CORS: origens via configuração (ex.: Cors__AllowedOrigins="https://a,https://b") ──
 var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
