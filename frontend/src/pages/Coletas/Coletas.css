@@ -50,3 +50,41 @@
   font-size: var(--font-size-sm);
   color: var(--text-muted);
 }
+
+/* ── Ver detalhes: diagnóstico de custo e avisos ─────────────────────────── */
+.coletas-badge-custo {
+  margin-left: var(--space-2);
+}
+
+.coletas-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  white-space: normal;
+}
+
+.coletas-detalhe-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.coletas-detalhe-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.coletas-detalhe-texto {
+  font-size: var(--font-size-sm);
+  color: var(--text);
+}
+
+.coletas-detalhe-lista {
+  padding-left: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}

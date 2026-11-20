@@ -15,8 +15,10 @@ LIMITE_ERRO = 1000
 # A partir da primeira ocorrência destas palavras (sem diferenciar maiúsculas), o resto é descartado.
 # "password"/"senha" só disparam como atribuição (password=..., senha: ...): assim mensagens de
 # diagnóstico como 'password authentication failed for user "x"' continuam legíveis.
+# "authorization" idem (header "Authorization: Signature ..."): a mensagem OCI
+# "Authorization failed or requested resource not found" precisa aparecer no diagnóstico.
 _GATILHOS = re.compile(
-    r"(key_content|pass_?phrase|secret|password\s*[=:]|passwd\s*[=:]|senha\s*[=:]|private|-----BEGIN|authorization|"
+    r"(key_content|pass_?phrase|secret|password\s*[=:]|passwd\s*[=:]|senha\s*[=:]|private|-----BEGIN|authorization['\"]?\s*[=:]|"
     r"x-amz-security-token|signature|credential|token=|client_secret|access_key)",
     re.IGNORECASE,
 )

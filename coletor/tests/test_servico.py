@@ -146,8 +146,10 @@ def test_coleta_oci_grava_coleta_bruta_gzip_e_coletado(servico, monkeypatch):
     assert bruta["tamanho"] == len(bruta["conteudo"]) and len(bruta["sha256"]) == 64
     fim = conn.com(sql.FINALIZAR)[0]
     assert fim["status"] == "COLETADO" and fim["coletado"] is True
-    assert json.loads(fim["resumo"]) == {"recursos": 2, "regioes": 1, "meses_custo": 0, "erros_nao_fatais": 1,
-                                         "duracao_seg": json.loads(fim["resumo"])["duracao_seg"]}
+    resumo = json.loads(fim["resumo"])
+    assert resumo == {"recursos": 2, "regioes": 1, "meses_custo": 0, "erros_nao_fatais": 1,
+                      "duracao_seg": resumo["duracao_seg"], "avisos_amostra": resumo["avisos_amostra"]}
+    assert len(resumo["avisos_amostra"]) == 1 and "custo" not in resumo  # inventário: sem diagnóstico de custo
     # O conteúdo gravado é o documento da coleta (sem a credencial).
     assert "SEGREDO_TESTE" not in json.dumps({k: v for k, v in bruta.items() if k != "conteudo"})
     import gzip

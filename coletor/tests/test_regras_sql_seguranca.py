@@ -71,7 +71,8 @@ def test_resumo_so_contagens():
         "errors": [{"scope": "cost"}],
     }
     r = regras.resumo_coleta(doc, 12.34)
-    assert r == {"recursos": 6, "regioes": 2, "meses_custo": 2, "erros_nao_fatais": 1, "duracao_seg": 12.3}
+    assert r == {"recursos": 6, "regioes": 2, "meses_custo": 2, "erros_nao_fatais": 1, "duracao_seg": 12.3,
+                 "avisos_amostra": [{"area": "cost", "operacao": "", "status_http": None, "mensagem": "erro sem descrição"}]}
 
 
 @pytest.mark.parametrize("chave,valor,esperado", [

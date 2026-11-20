@@ -5,6 +5,8 @@ import gzip
 import hashlib
 import json
 
+from .diagnostico import avisos_amostra, diagnostico_custo
+
 PROVEDORES_COM_COLETA = {"OCI"}
 MENSAGEM_SEM_COLETA = "Coleta deste provedor ainda não disponível (próximas fases)"
 MENSAGEM_SEM_CREDENCIAL = "Conta sem credencial ativa"
@@ -52,8 +54,8 @@ def compactar_documento(documento: dict) -> tuple[bytes, str]:
     return gz, hashlib.sha256(gz).hexdigest()
 
 
-def resumo_coleta(documento: dict, duracao_seg: float) -> dict:
-    """Só contagens (nada sensível)."""
+def resumo_coleta(documento: dict, duracao_seg: float, com_custo: bool = False) -> dict:
+    """Contagens + diagnóstico de custo + amostra de avisos (tudo sanitizado)."""
     recursos = 0
     for regiao in (documento.get("resources_by_region") or {}).values():
         if isinstance(regiao, dict):
@@ -68,15 +70,16 @@ def resumo_coleta(documento: dict, duracao_seg: float) -> dict:
         "meses_custo": meses_de_custo(documento.get("cost")),
         "erros_nao_fatais": len(documento.get("errors") or []),
         "duracao_seg": round(float(duracao_seg), 1),
+        **({"custo": diagnostico_custo(documento)} if com_custo else {}),
+        "avisos_amostra": avisos_amostra(documento.get("errors")),
     }
 
 
 def meses_de_custo(custo: dict | None) -> int:
-    """Meses distintos nas séries mensais do coletor (campos month / time_usage_started)."""
+    """Meses distintos em monthly_by_service (campos month / time_usage_started)."""
     meses: set[str] = set()
-    for chave, linhas in (custo or {}).items():
-        if not chave.startswith("monthly_by_") or not isinstance(linhas, list):
-            continue
+    linhas = (custo or {}).get("monthly_by_service")
+    if isinstance(linhas, list):
         for linha in linhas:
             if isinstance(linha, dict):
                 mes = str(linha.get("month") or linha.get("time_usage_started") or "")[:7]

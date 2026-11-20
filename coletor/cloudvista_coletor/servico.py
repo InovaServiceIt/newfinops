@@ -226,16 +226,17 @@ class Servico:
         except ValueError as exc:
             raise JobFalhou(sanitizar(exc, LIMITE_ERRO)) from None
 
+        com_custo = regras.com_custo(job.tipo_job)
         documento = adaptador_oci.coletar(
             config,
-            com_custo=regras.com_custo(job.tipo_job),
+            com_custo=com_custo,
             dias_custo=regras.dias_de_custo(job.escopo),
             nome_cliente=nome_cliente,
         )
         config.clear()
 
         conteudo, sha256 = regras.compactar_documento(documento)
-        resumo = regras.resumo_coleta(documento, time.monotonic() - inicio)
+        resumo = regras.resumo_coleta(documento, time.monotonic() - inicio, com_custo)
         with conn.transaction():
             conn.execute(sql.COLETA_BRUTA, {"job": job.id, "tamanho": len(conteudo), "sha256": sha256, "conteudo": conteudo})
             self.finalizar(conn, job.id, "COLETADO", erro=None, resumo=resumo, coletado=True)

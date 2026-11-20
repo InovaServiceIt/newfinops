@@ -11,6 +11,7 @@ import {
 } from '../../services/coletas';
 import { listarContas, type ContaCloud } from '../../services/contas';
 import ColetarAgoraModal, { AVISO_DADO } from './ColetarAgoraModal';
+import DetalhesColeta, { BadgeCusto, temDetalhes } from './DetalhesColeta';
 import '../Contas/Contas.css';
 import './Coletas.css';
 
@@ -206,20 +207,18 @@ const ColetasConteudo: React.FC = () => {
                       <td className="num">{duracao(c.duracaoSeg)}</td>
                       <td>
                         <span>{resumoLegivel(c)}</span>
-                        {c.erro && (
+                        <BadgeCusto c={c} />
+                        {temDetalhes(c) && (
                           <button type="button" className="coletas-erro-botao" onClick={() => setExpandido(expandido === c.id ? null : c.id)}
                             aria-expanded={expandido === c.id}>
-                            {expandido === c.id ? 'Ocultar erro' : 'Ver erro'}
+                            {expandido === c.id ? 'Ocultar detalhes' : 'Ver detalhes'}
                           </button>
                         )}
                       </td>
                     </tr>
-                    {expandido === c.id && c.erro && (
+                    {expandido === c.id && temDetalhes(c) && (
                       <tr className="coletas-erro-linha">
-                        <td colSpan={7}>
-                          <div className="ui-alert ui-alert-danger">{c.erro}</div>
-                          {c.coletorVersao && <span className="coletas-sub">Coletor {c.coletorVersao}</span>}
-                        </td>
+                        <td colSpan={7}><DetalhesColeta c={c} /></td>
                       </tr>
                     )}
                   </React.Fragment>
