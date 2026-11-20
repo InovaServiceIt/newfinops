@@ -5,18 +5,22 @@ import './PageHeader.css';
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
+  /** Ações da página (ex.: Exportar, filtros), alinhadas à direita na mesma linha. */
+  actions?: React.ReactNode;
 }
 
-/** Breadcrumb "FinOps / <página>" + título. */
-const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle }) => (
+/** Cabeçalho compacto da página em uma linha: "FinOps › <título>" + ações à direita. */
+const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, actions }) => (
   <div className="page-header">
-    <nav className="page-breadcrumb" aria-label="Breadcrumb">
-      <span>FinOps</span>
-      <ChevronRight size={14} />
-      <span className="page-breadcrumb-current">{title}</span>
-    </nav>
-    <h1 className="page-title">{title}</h1>
-    {subtitle && <p className="page-subtitle">{subtitle}</p>}
+    <div className="page-header-main">
+      <nav className="page-breadcrumb" aria-label="Breadcrumb">
+        <span>FinOps</span>
+        <ChevronRight size={14} className="page-breadcrumb-sep" aria-hidden="true" />
+      </nav>
+      <h1 className="page-title">{title}</h1>
+      {subtitle && <p className="page-subtitle">{subtitle}</p>}
+    </div>
+    {actions && <div className="page-header-actions">{actions}</div>}
   </div>
 );
 
