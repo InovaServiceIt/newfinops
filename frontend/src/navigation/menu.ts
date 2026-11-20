@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Search, PieChart, Tags,
   Lightbulb, AlertTriangle, Wallet, Server,
-  Receipt, Bot, Settings, Cloud,
+  Receipt, Bot, Settings, Cloud, Download,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -11,6 +11,8 @@ export interface MenuItem {
   icon: LucideIcon;
   /** Visível só para ADMINISTRADOR (o backend também garante). */
   adminOnly?: boolean;
+  /** Perfis que veem o item (ausente = todos). O backend também garante. */
+  perfis?: ('ADMINISTRADOR' | 'ANALISTA_FINOPS' | 'CLIENTE')[];
 }
 
 export interface MenuSection {
@@ -44,6 +46,7 @@ export const MENU: MenuSection[] = [
       { title: 'Faturamento (fator)', path: '/faturamento', icon: Receipt },
       { title: 'Copiloto IA', path: '/copiloto-ia', icon: Bot },
       { title: 'Contas de cloud', path: '/contas-de-cloud', icon: Cloud },
+      { title: 'Coletas', path: '/coletas', icon: Download, perfis: ['ADMINISTRADOR', 'ANALISTA_FINOPS'] },
       { title: 'Configurações', path: '/configuracoes', icon: Settings, adminOnly: true },
     ],
   },

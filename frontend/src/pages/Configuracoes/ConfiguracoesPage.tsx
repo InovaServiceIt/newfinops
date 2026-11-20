@@ -5,15 +5,19 @@ import { useEhAdministrador } from '../../components/auth/AuthGuard';
 import { HOME_PATH } from '../../navigation/menu';
 import ClientesAba from './ClientesAba';
 import ContasAba from './ContasAba';
+import AgendaAba from './AgendaAba';
+import ParametrosAba from './ParametrosAba';
 import UsuariosAba from './UsuariosAba';
 import './ConfiguracoesPage.css';
 
-type Aba = 'clientes' | 'usuarios' | 'contas';
+type Aba = 'clientes' | 'usuarios' | 'contas' | 'agenda' | 'parametros';
 
 const ABAS: { id: Aba; rotulo: string }[] = [
   { id: 'clientes', rotulo: 'Clientes' },
   { id: 'usuarios', rotulo: 'Usuários' },
   { id: 'contas', rotulo: 'Contas de cloud' },
+  { id: 'agenda', rotulo: 'Agenda' },
+  { id: 'parametros', rotulo: 'Parâmetros' },
 ];
 
 /** Configurações (só ADMINISTRADOR; o backend também exige a política Administrador). */
@@ -38,6 +42,8 @@ const ConfiguracoesPage: React.FC = () => {
       {aba === 'clientes' && <ClientesAba />}
       {aba === 'usuarios' && <UsuariosAba />}
       {aba === 'contas' && <ContasAba />}
+      {aba === 'agenda' && <AgendaAba />}
+      {aba === 'parametros' && <ParametrosAba />}
     </div>
   );
 };

@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cloud, KeyRound, Pencil, Power } from 'lucide-react';
+import { Cloud, KeyRound, Pencil, Play, Power } from 'lucide-react';
 import { mensagemDeErro } from '../../services/api';
 import { listarContas, type ContaCloud, type Provedor } from '../../services/contas';
 import { LISTA_PROVEDORES, PROVEDORES, ROTULO_ESCOPO } from './provedores';
 import { STATUS } from './credenciais';
 import CredencialModal from './CredencialModal';
+import ColetarAgoraModal from '../Coletas/ColetarAgoraModal';
+import { permissaoColeta } from '../../services/coletas';
 import type { StatusCredencial } from '../../services/credencial';
 import './Contas.css';
 
@@ -28,6 +30,13 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
   const [incluirInativas, setIncluirInativas] = useState(false);
   const [credencialDe, setCredencialDe] = useState<ContaCloud | null>(null);
   const [recarga, setRecarga] = useState(0);
+  const [podeColetar, setPodeColetar] = useState(false);
+  const [coletarDe, setColetarDe] = useState<ContaCloud | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  useEffect(() => {
+    permissaoColeta().then((r) => setPodeColetar(r.podeColetar)).catch(() => setPodeColetar(false));
+  }, []);
 
   const carregar = useCallback(() => {
     setErro(null);
@@ -74,6 +83,7 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
         {acoes && <div className="contas-acoes">{acoes}</div>}
       </div>
 
+      {aviso && <div className="ui-alert ui-alert-success">{aviso}</div>}
       {erro && <div className="ui-alert ui-alert-danger" role="alert">{erro}</div>}
       {!contas && !erro && <div className="ui-skeleton contas-esqueleto" />}
       {contas && visiveis.length === 0 && (
@@ -106,6 +116,14 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
                     </span>
                   </td>
                   <td className="contas-col-acoes">
+                    {podeColetar && (
+                      <button type="button" className="ui-btn ui-btn-ghost contas-icone" onClick={() => setColetarDe(c)}
+                        disabled={!c.ativo || c.credencialStatus !== 'ATIVA'}
+                        title={!c.ativo ? 'Conta inativa' : c.credencialStatus !== 'ATIVA' ? 'Teste a credencial antes de coletar' : 'Coletar agora'}
+                        aria-label={`Coletar agora ${c.nome}`}>
+                        <Play size={16} />
+                      </button>
+                    )}
                     <button type="button" className="ui-btn ui-btn-ghost contas-icone" onClick={() => setCredencialDe(c)}
                       title="Credencial" aria-label={`Credencial de ${c.nome}`}>
                       <KeyRound size={16} />
@@ -131,6 +149,13 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
       )}
 
       <CredencialModal conta={credencialDe} onFechar={() => setCredencialDe(null)} onAlterado={() => setRecarga((r) => r + 1)} />
+      <ColetarAgoraModal
+        aberto={coletarDe !== null}
+        contas={coletarDe ? [coletarDe] : []}
+        contaInicial={coletarDe?.id ?? null}
+        onFechar={() => setColetarDe(null)}
+        onEnfileirado={(jobId) => { setColetarDe(null); setAviso(`Coleta enfileirada (job #${jobId}). Acompanhe em Coletas.`); }}
+      />
     </section>
   );
 };

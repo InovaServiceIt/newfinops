@@ -49,6 +49,16 @@ export async function apiSend<T>(method: 'POST' | 'PUT' | 'PATCH', url: string, 
   return (await res.json()) as T;
 }
 
+/** Envio para endpoints que respondem 204 (sem corpo). */
+export async function apiSendVazio(method: 'POST' | 'PUT' | 'PATCH', url: string, body: unknown): Promise<void> {
+  const res = await fetch(url, {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return tratarErro(res);
+}
+
 export function mensagemDeErro(e: unknown, padrao = 'Não foi possível concluir a operação.'): string {
   return e instanceof ApiError ? e.message : padrao;
 }

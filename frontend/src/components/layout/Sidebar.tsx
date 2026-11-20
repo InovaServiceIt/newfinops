@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Palette, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { MENU } from '../../navigation/menu';
-import { useEhAdministrador } from '../auth/AuthGuard';
+import { useCurrentUser } from '../auth/AuthGuard';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -11,9 +11,10 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
-  const ehAdmin = useEhAdministrador();
+  const perfil = useCurrentUser()?.perfil;
+  const ehAdmin = perfil === 'ADMINISTRADOR';
   const secoes = MENU
-    .map((s) => ({ ...s, items: s.items.filter((i) => !i.adminOnly || ehAdmin) }))
+    .map((s) => ({ ...s, items: s.items.filter((i) => (!i.adminOnly || ehAdmin) && (!i.perfis || (!!perfil && i.perfis.includes(perfil)))) }))
     .filter((s) => s.items.length > 0);
 
   return (

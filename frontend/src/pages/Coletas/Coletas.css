@@ -1,0 +1,52 @@
+.coletas-aviso {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  border-left: 3px solid var(--accent-2);
+  padding-left: var(--space-3);
+}
+
+.coletas-data {
+  min-width: 150px !important;
+}
+
+.coletas-auto {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.coletas-conta {
+  display: block;
+  color: var(--text);
+}
+
+.coletas-sub {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.coletas-erro-botao {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--danger);
+  text-decoration: underline;
+}
+
+.coletas-erro-linha td {
+  background: var(--surface-2);
+}
+
+.coletas-erro-linha .ui-alert {
+  word-break: break-word;
+}
+
+.coletas-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}

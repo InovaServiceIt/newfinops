@@ -9,6 +9,7 @@ import PlaceholderPage from './pages/Placeholder/PlaceholderPage';
 import TokensPage from './pages/Tokens/TokensPage';
 import ConfiguracoesPage from './pages/Configuracoes/ConfiguracoesPage';
 import ContasPage from './pages/Contas/ContasPage';
+import ColetasPage from './pages/Coletas/ColetasPage';
 
 // Carregada sob demanda: os gráficos (recharts) ficam fora do bundle inicial.
 const VisaoGeralPage = lazy(() => import('./pages/VisaoGeral/VisaoGeralPage'));
@@ -22,6 +23,7 @@ const PAGINAS: Record<string, ReactElement> = {
   ),
   '/configuracoes': <ConfiguracoesPage />,
   '/contas-de-cloud': <ContasPage />,
+  '/coletas': <ColetasPage />,
 };
 
 function App() {
