@@ -7,6 +7,7 @@ import { HOME_PATH, MENU_ITEMS } from './navigation/menu';
 import LoginPage from './pages/Login/LoginPage';
 import PlaceholderPage from './pages/Placeholder/PlaceholderPage';
 import TokensPage from './pages/Tokens/TokensPage';
+import ConfiguracoesPage from './pages/Configuracoes/ConfiguracoesPage';
 
 // Carregada sob demanda: os gráficos (recharts) ficam fora do bundle inicial.
 const VisaoGeralPage = lazy(() => import('./pages/VisaoGeral/VisaoGeralPage'));
@@ -18,6 +19,7 @@ const PAGINAS: Record<string, ReactElement> = {
       <VisaoGeralPage />
     </Suspense>
   ),
+  '/configuracoes': <ConfiguracoesPage />,
 };
 
 function App() {

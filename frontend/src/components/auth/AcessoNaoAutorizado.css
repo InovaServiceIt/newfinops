@@ -1,0 +1,82 @@
+.cv-acesso-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  background: var(--bg);
+}
+
+.cv-acesso-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.cv-acesso-faixa {
+  background: var(--header-bg);
+  border-bottom: var(--header-border-width) solid var(--header-border);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.cv-acesso-logo {
+  height: 40px;
+  width: auto;
+}
+
+.cv-acesso-corpo {
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+}
+
+.cv-acesso-marca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: var(--text);
+}
+
+.cv-acesso-marca-icone {
+  color: var(--accent);
+}
+
+.cv-acesso-icone {
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+}
+
+.cv-acesso-corpo h1 {
+  font-size: var(--font-size-xl);
+}
+
+.cv-acesso-texto {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.cv-acesso-email {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.cv-acesso-acoes {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}

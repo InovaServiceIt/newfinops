@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Palette, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { MENU } from '../../navigation/menu';
+import { useEhAdministrador } from '../auth/AuthGuard';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -9,10 +10,16 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => (
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
+  const ehAdmin = useEhAdministrador();
+  const secoes = MENU
+    .map((s) => ({ ...s, items: s.items.filter((i) => !i.adminOnly || ehAdmin) }))
+    .filter((s) => s.items.length > 0);
+
+  return (
   <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`} aria-label="Menu principal">
     <nav className="sidebar-nav">
-      {MENU.map((section) => (
+      {secoes.map((section) => (
         <div key={section.title} className="sidebar-section">
           <div className="sidebar-section-title">{section.title}</div>
           {section.items.map(({ title, path, icon: Icon }) => (
@@ -50,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => (
       </button>
     </div>
   </aside>
-);
+  );
+};
 
 export default Sidebar;

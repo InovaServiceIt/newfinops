@@ -1,3 +1,5 @@
+import { apiGet } from './api';
+
 // Cliente da API /api/visao-geral (tipos espelham os DTOs do backend).
 
 export interface ProvedorOpcao {
@@ -97,27 +99,8 @@ export interface FiltrosVisaoGeral {
   comFator: boolean;
 }
 
-/** Erro com a mensagem amigável que a API devolve em { erro }. */
-export class ApiError extends Error {}
-
-async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
-  if (res.status === 401) {
-    window.location.href = '/login';
-    throw new ApiError('Sessão expirada.');
-  }
-  if (!res.ok) {
-    let mensagem = 'Não foi possível carregar os dados.';
-    try {
-      const body = await res.json();
-      if (body && typeof body.erro === 'string') mensagem = body.erro;
-    } catch {
-      /* corpo não é JSON */
-    }
-    throw new ApiError(mensagem);
-  }
-  return (await res.json()) as T;
-}
+export { ApiError } from './api';
+const getJson = apiGet;
 
 export function buscarOpcoes(provedor: number | null, signal?: AbortSignal): Promise<OpcoesVisaoGeral> {
   const qs = provedor ? `?provedor=${provedor}` : '';

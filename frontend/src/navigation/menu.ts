@@ -9,6 +9,8 @@ export interface MenuItem {
   title: string;
   path: string;
   icon: LucideIcon;
+  /** Visível só para ADMINISTRADOR (o backend também garante). */
+  adminOnly?: boolean;
 }
 
 export interface MenuSection {
@@ -41,7 +43,7 @@ export const MENU: MenuSection[] = [
     items: [
       { title: 'Faturamento (fator)', path: '/faturamento', icon: Receipt },
       { title: 'Copiloto IA', path: '/copiloto-ia', icon: Bot },
-      { title: 'Configurações', path: '/configuracoes', icon: Settings },
+      { title: 'Configurações', path: '/configuracoes', icon: Settings, adminOnly: true },
     ],
   },
 ];

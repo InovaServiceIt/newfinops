@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Moon, Settings, Sun } from 'lucide-react';
 import { useTheme } from '../../theme/ThemeProvider';
 import { THEMES } from '../../theme/themes';
-import { useCurrentUser } from '../auth/AuthGuard';
+import { NOME_PERFIL, useCurrentUser } from '../auth/AuthGuard';
 import './GlobalHeader.css';
 
 function initials(name: string): string {
@@ -49,9 +49,12 @@ const GlobalHeader: React.FC = () => {
         </button>
 
         {user && (
-          <div className="header-user" title={user.email ?? user.name}>
-            <span className="header-user-avatar">{initials(user.name)}</span>
-            <span className="header-user-name">{user.name}</span>
+          <div className="header-user" title={`${user.nome} · ${user.email}`}>
+            <span className="header-user-avatar">{initials(user.nome)}</span>
+            <span className="header-user-info">
+              <span className="header-user-name">{user.email}</span>
+              <span className="header-user-perfil">{NOME_PERFIL[user.perfil]}</span>
+            </span>
           </div>
         )}
 

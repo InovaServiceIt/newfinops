@@ -89,7 +89,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  max-width: 220px;
+  max-width: 380px;
 }
 
 .header-user-avatar {
@@ -104,6 +104,24 @@
   font-size: var(--font-size-xs);
   font-weight: 700;
   flex-shrink: 0;
+}
+
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.header-user-perfil {
+  flex-shrink: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--header-control-bg);
+  color: var(--header-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .header-user-name {

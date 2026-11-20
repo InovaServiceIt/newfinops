@@ -237,3 +237,46 @@
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
+
+/* ── Botão de ação destrutiva (ex.: desativar) ─────────────────────────────── */
+.ui-btn-perigo {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.ui-btn-perigo:hover {
+  background: var(--surface-hover);
+}
+.ui-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Abas ──────────────────────────────────────────────────────────────────── */
+.ui-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border-strong);
+}
+.ui-tab {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.ui-tab:hover {
+  color: var(--text);
+}
+.ui-tab[aria-selected="true"] {
+  color: var(--sidebar-item-active-text);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Contêiner de tabela (rolagem interna, nunca da página) ────────────────── */
+.ui-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}

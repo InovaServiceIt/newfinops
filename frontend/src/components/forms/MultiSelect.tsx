@@ -15,10 +15,12 @@ interface MultiSelectProps {
   onChange: (value: string[]) => void;
   /** Mostra campo de busca (listas longas, ex.: SKUs). */
   searchable?: boolean;
+  /** Texto quando nada está selecionado (padrão "Todos", para filtros). */
+  textoVazio?: string;
 }
 
 /** Seleção múltipla com "Todos" quando nada está marcado. Só tokens/classes ui-*. */
-const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChange, searchable }) => {
+const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChange, searchable, textoVazio }) => {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState('');
@@ -46,7 +48,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
   const selecionados = new Set(value);
   const resumo =
     value.length === 0
-      ? 'Todos'
+      ? textoVazio ?? 'Todos'
       : value.length === 1
         ? options.find((o) => o.value === value[0])?.label ?? value[0]
         : `${value.length} selecionados`;
@@ -81,7 +83,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, value, onChan
             />
           )}
           <div className="multiselect-actions">
-            <button type="button" className="ui-btn ui-btn-ghost" onClick={() => onChange([])}>Todos</button>
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={() => onChange([])}>{textoVazio ? 'Limpar' : 'Todos'}</button>
             {visiveis.length > 0 && visiveis.length < options.length && (
               <button
                 type="button"
