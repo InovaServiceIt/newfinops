@@ -1,0 +1,2709 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 23,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Multicloud</title>\n    <style>\n        body {\n            margin: auto;\n            font-family: -apple-system, BlinkMacSystemFont, Arial;\n            overflow: auto;\n            background: linear-gradient(315deg, #35003e 3%, #1d4686 38%, #117f7d 68%, #470404 98%);\n            animation: gradient 30s ease infinite;\n            background-size: 400% 400%;\n            background-attachment: fixed;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            height: 100vh;\n            flex-direction: column;\n        }\n\n        @keyframes gradient {\n            0% {\n                background-position: 0% 0%;\n            }\n            50% {\n                background-position: 100% 100%;\n            }\n            100% {\n                background-position: 0% 0%;\n            }\n        }\n\n        .header {\n            position: relative;\n            width: 100%;\n            background: url('https://i.imgur.com/mGoefVE.png') no-repeat center center;\n            background-size: cover;\n            padding: 20px 0;\n            text-align: center;\n            color: #fff;\n            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);\n            border-radius: 15px;\n            margin-bottom: 20px;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n        }\n\n        .header h1 {\n            margin: 0;\n            font-size: 2.5em;\n            animation: textFadeIn 3s ease forwards;\n            flex: 1;\n            text-align: center;\n        }\n\n        .header p {\n            margin: 4px 0 0;\n            font-size: 1.5em;\n            animation: textFadeIn 3s ease forwards;\n            flex: 1;\n            text-align: center;\n        }\n\n        .header .glow {\n            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.5);\n        }\n\n        @keyframes textFadeIn {\n            0% {\n                opacity: 0;\n                transform: translateY(-20px);\n            }\n            100% {\n                opacity: 1;\n                transform: translateY(0);\n            }\n        }\n\n        .header .back-icon-wrapper {\n            position: absolute;\n            top: 50%;\n            left: 20px;\n            transform: translateY(-50%);\n            z-index: 2; /* Ensures it is above other content */\n        }\n\n        .header .back-icon {\n            max-height: 80px;\n            cursor: pointer;\n        }\n\n        .header .logo-wrapper {\n            position: absolute;\n            top: 50%;\n            right: 20px;\n            transform: translateY(-50%);\n            z-index: 2;\n            max-width: 100px; /* Limite o tamanho máximo da área do logo */\n            max-height: 80px;\n            overflow: hidden; /* Evite que o logo ultrapasse a área */\n        }\n\n        .header .logo {\n            position: absolute;\n            top: 50%;\n            right: 20px;\n            transform: translateY(-50%);\n            max-height: 80px;\n        }\n\n        .wave {\n            background: rgb(255 255 255 / 25%);\n            border-radius: 1000% 1000% 0 0;\n            position: fixed;\n            width: 200%;\n            height: 6em;\n            animation: wave 10s -3s linear infinite;\n            transform: translate3d(0, 0, 0);\n            opacity: 0.8;\n            bottom: 0;\n            left: 0;\n            z-index: -1;\n        }\n\n        .wave:nth-of-type(2) {\n            bottom: -1.25em;\n            animation: wave 10s linear reverse infinite;\n            opacity: 0.8;\n        }\n\n        .wave:nth-of-type(3) {\n            bottom: -2.5em;\n            animation: wave 10s -1s reverse infinite;\n            opacity: 0.9;\n        }\n\n        @keyframes wave {\n            2% {\n                transform: translateX(1);\n            }\n            25% {\n                transform: translateX(-25%);\n            }\n            50% {\n                transform: translateX(-50%);\n            }\n            75% {\n                transform: translateX(-25%);\n            }\n            100% {\n                transform: translateX(1);\n            }\n        }\n\n        .container-wrapper {\n            display: flex;\n            flex-wrap: wrap;\n            justify-content: space-around;\n            width: 100%;\n        }\n\n        .container {\n            display: flex;\n            align-items: center;\n            background-color: #ffffff;\n            color: #000000;\n            padding: 10px 20px;\n            border-radius: 20px;\n            font-size: 18px;\n            margin: 10px;\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n            transition: transform 0.5s, box-shadow 10s;\n            width: 240px;\n            cursor: pointer;\n        }\n\n        .container:hover {\n            transform: translateY(-11px);\n            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);\n        }\n\n        .container img {\n            margin-left: 10px;\n            margin-right: 20px;\n            max-width: 60px;\n            max-height: 60px;\n            animation: piscar 10s infinite;\n        }\n\n        .text-container {\n            text-align: center;\n        }\n\n        @keyframes piscar {\n            0%, 50%, 100% {\n                opacity: 1;\n            }\n            25%, 75% {\n                opacity: 0;\n            }\n        }\n    </style>\n</head>\n<body>\n    <header class=\"header\">\n <div class=\"back-icon-wrapper\">\n           <a onclick=\"history.back(); return false;\">\n                <img src=\"https://img.icons8.com/?size=100&id=tJR7qBSiarrC&format=png&color=000000\" class=\"back-icon\" alt=\"Back Icon\">\n            </a>\n        </div>\n        <div style=\"flex: 1;\">\n            <h1 class=\"glow\">Microsoft Azure</h1>\n            <p class=\"glow\">Unimed Nacional</p>\n        </div>\n            <img src=\"https://spy9ab.p3cdn1.secureserver.net/wp-content/uploads/2023/02/LOGO-SERVICE-MONTADO.svg\" class=\"logo\" alt=\"Logo\">\n        </div>\n    </header>\n</body>\n</html>\n",
+        "mode": "html"
+      },
+      "pluginVersion": "10.2.0",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "color",
+              "thresholds": []
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
+      "id": 44,
+      "options": {
+        "alwaysVisibleFilter": false,
+        "autoScroll": false,
+        "collapsedByDefault": false,
+        "customValue": false,
+        "displayMode": "minimize",
+        "emptyValue": false,
+        "favorites": {
+          "addQuery": {},
+          "datasource": "",
+          "deleteQuery": {},
+          "enabled": false,
+          "getQuery": {},
+          "storage": "browser"
+        },
+        "filter": false,
+        "groupSelection": false,
+        "header": true,
+        "isUseLocalTime": false,
+        "maxVisibleValues": 1,
+        "minimizeOutputFormat": "text",
+        "padding": 10,
+        "persistent": false,
+        "saveSelectedGroup": false,
+        "saveSelectedGroupKey": "",
+        "showGroupTotal": false,
+        "showLabel": true,
+        "showName": false,
+        "showResetButton": false,
+        "showTotal": false,
+        "statusSort": false,
+        "sticky": false,
+        "tabsInOrder": true,
+        "variable": "ano"
+      },
+      "pluginVersion": "3.6.0",
+      "transparent": true,
+      "type": "volkovlabs-variable-panel"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "color",
+              "thresholds": []
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 4,
+        "x": 4,
+        "y": 4
+      },
+      "id": 45,
+      "options": {
+        "alwaysVisibleFilter": false,
+        "autoScroll": false,
+        "collapsedByDefault": false,
+        "customValue": false,
+        "displayMode": "minimize",
+        "emptyValue": false,
+        "favorites": {
+          "addQuery": {},
+          "datasource": "",
+          "deleteQuery": {},
+          "enabled": false,
+          "getQuery": {},
+          "storage": "browser"
+        },
+        "filter": false,
+        "groupSelection": false,
+        "header": true,
+        "isUseLocalTime": false,
+        "maxVisibleValues": 1,
+        "minimizeOutputFormat": "text",
+        "padding": 10,
+        "persistent": false,
+        "saveSelectedGroup": false,
+        "saveSelectedGroupKey": "",
+        "showGroupTotal": false,
+        "showLabel": true,
+        "showName": false,
+        "showResetButton": false,
+        "showTotal": false,
+        "statusSort": false,
+        "sticky": false,
+        "tabsInOrder": true,
+        "variable": "mes"
+      },
+      "pluginVersion": "3.6.0",
+      "transparent": true,
+      "type": "volkovlabs-variable-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "color",
+              "thresholds": []
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 5,
+        "x": 8,
+        "y": 4
+      },
+      "id": 35,
+      "options": {
+        "alwaysVisibleFilter": false,
+        "autoScroll": false,
+        "collapsedByDefault": false,
+        "customValue": false,
+        "displayMode": "minimize",
+        "emptyValue": false,
+        "favorites": {
+          "addQuery": {},
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "deleteQuery": {},
+          "enabled": false,
+          "getQuery": {},
+          "storage": "browser"
+        },
+        "filter": false,
+        "groupSelection": false,
+        "header": true,
+        "isUseLocalTime": false,
+        "maxVisibleValues": 1,
+        "minimizeOutputFormat": "text",
+        "padding": 10,
+        "persistent": false,
+        "saveSelectedGroup": false,
+        "saveSelectedGroupKey": "",
+        "showGroupTotal": false,
+        "showLabel": true,
+        "showName": false,
+        "showResetButton": false,
+        "showTotal": true,
+        "statusSort": false,
+        "sticky": false,
+        "tabsInOrder": true,
+        "variable": "recurso"
+      },
+      "pluginVersion": "3.6.0",
+      "transparent": true,
+      "type": "volkovlabs-variable-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "color",
+              "thresholds": []
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 5,
+        "x": 13,
+        "y": 4
+      },
+      "id": 33,
+      "options": {
+        "alwaysVisibleFilter": false,
+        "autoScroll": false,
+        "collapsedByDefault": false,
+        "customValue": false,
+        "displayMode": "minimize",
+        "emptyValue": false,
+        "favorites": {
+          "addQuery": {},
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "deleteQuery": {},
+          "enabled": false,
+          "getQuery": {},
+          "storage": "browser"
+        },
+        "filter": false,
+        "groupSelection": false,
+        "header": true,
+        "isUseLocalTime": false,
+        "maxVisibleValues": 1,
+        "minimizeOutputFormat": "text",
+        "padding": 10,
+        "persistent": false,
+        "saveSelectedGroup": false,
+        "saveSelectedGroupKey": "",
+        "showGroupTotal": false,
+        "showLabel": true,
+        "showName": false,
+        "showResetButton": false,
+        "showTotal": true,
+        "statusSort": false,
+        "sticky": false,
+        "tabsInOrder": true,
+        "variable": "servico"
+      },
+      "pluginVersion": "3.6.0",
+      "transparent": true,
+      "type": "volkovlabs-variable-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "color",
+              "thresholds": []
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 18,
+        "y": 4
+      },
+      "id": 34,
+      "options": {
+        "alwaysVisibleFilter": false,
+        "autoScroll": false,
+        "collapsedByDefault": false,
+        "customValue": false,
+        "displayMode": "minimize",
+        "emptyValue": false,
+        "favorites": {
+          "addQuery": {},
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "deleteQuery": {},
+          "enabled": false,
+          "getQuery": {},
+          "storage": "browser"
+        },
+        "filter": false,
+        "groupSelection": false,
+        "header": true,
+        "isUseLocalTime": false,
+        "maxVisibleValues": 1,
+        "minimizeOutputFormat": "text",
+        "padding": 10,
+        "persistent": false,
+        "saveSelectedGroup": false,
+        "saveSelectedGroupKey": "",
+        "showGroupTotal": false,
+        "showLabel": true,
+        "showName": false,
+        "showResetButton": false,
+        "showTotal": true,
+        "statusSort": false,
+        "sticky": false,
+        "tabsInOrder": true,
+        "variable": "regiao"
+      },
+      "pluginVersion": "3.6.0",
+      "transparent": true,
+      "type": "volkovlabs-variable-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Multicloud</title>\n    <style>\n       .card-container {\n            display: flex;\n            flex-wrap: wrap;\n            justify-content: left;\n            gap: 90px;\n            margin-top: 70px;\n            margin-left: 25px;\n            margin-bottom: 1px;\n        }\n\n        .card {\n            width: 230px;\n            text-align: center;\n            padding: 10px;\n            background: rgba(255, 255, 255, 0.1);\n            backdrop-filter: blur(10px);\n            border-radius: 10px;\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);\n            transition: transform 0.8s ease, box-shadow 10s ease;\n        }\n\n        .card:hover {\n            transform: translateY(-25px);\n            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);\n        }\n\n        .card img {\n            width: 100px;\n            height: 100px;\n            border-radius: 10px;\n        }\n\n        .card h2 {\n            margin-top: 10px;\n            font-size: 1.2em;\n            color: #fff;\n        }\n\n        a.card-link {\n            text-decoration: none;\n            color: inherit;\n            display: block;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"card-container\">\n\n            <div class=\"card\">\n                <img src=\"https://img.icons8.com/?size=100&id=VLKafOkk3sBX&format=png&color=000000.png\" />\n                <h2 id=\"azure-cost\">Azure - ${azure}</h2>\n            </div>\n    </div>\n\n<script>\n// Função para formatar como moeda brasileira sem centavos\nfunction formatarMoeda(valor) {\n    return valor.toLocaleString('pt-BR', {\n        style: 'currency',\n        currency: 'BRL',\n        minimumFractionDigits: 2,\n        maximumFractionDigits: 2\n    });\n}\n\n\n    // Função principal para atualizar os valores na página\n    function atualizarValores() {\n        // Valor de exemplo para Azure, AWS, e GCP\n        let azure = ${azure}; // Variável renderizada pelo servidor\n\n\n        // Formatando os valores\n        let azureFormatado = formatarMoeda(azure);\n\n\n        // Atualizando os elementos na página\n        document.getElementById(\"azure-cost\").innerHTML = `Azure - ${azureFormatado}`;\n    }\n\n    // Executa a função para atualizar os valores na primeira carga\n    atualizarValores();\n\n    // Reexecuta o script se a URL mudar sem recarregar a página (via history API)\n    window.addEventListener('popstate', function() {\n        atualizarValores();\n    });\n</script>\n\n</body>\n</html>\n",
+        "mode": "html"
+      },
+      "pluginVersion": "10.2.0",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 8,
+        "w": 19,
+        "x": 5,
+        "y": 6
+      },
+      "id": 36,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto"
+        },
+        "editorMode": "visual",
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "const series = context.panel.data.series.map((s) => {\n  const sData = s.fields.find((f) => f.type === 'number').values.buffer || s.fields.find((f) => f.type === 'number').values;\n  const sTime = s.fields.find((f) => f.type === 'time').values.buffer || s.fields.find((f) => f.type === 'time').values;\n  \n  return {\n    name: s.refId,\n    type: 'line',\n    showSymbol: false,\n    areaStyle: {\n      opacity: 0.1,\n    },\n    lineStyle: {\n      width: 1,\n    },\n    data: sData.map((d, i) => [sTime[i], d.toFixed(2)]),\n  };\n});\n\n/**\n * Enable Data Zoom by default\n */\nsetTimeout(() => context.panel.chart.dispatchAction({\n  type: 'takeGlobalCursor',\n  key: 'dataZoomSelect',\n  dataZoomSelectActive: true,\n}), 500);\n\n/**\n * Update Time Range on Zoom\n */\ncontext.panel.chart.on('datazoom', function (params) {\n  const startValue = params.batch[0]?.startValue;\n  const endValue = params.batch[0]?.endValue;\n  locationService.partial({ from: startValue, to: endValue });\n});\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n  },\n  legend: {\n    left: '0',\n    bottom: '0',\n    data: context.panel.data.series.map((s) => s.refId),\n    textStyle: {\n      color: 'rgba(128, 128, 128, .9)',\n    },\n  },\n  toolbox: {\n    feature: {\n      dataZoom: {\n        yAxisIndex: 'none',\n        icon: {\n          zoom: 'path://',\n          back: 'path://',\n        },\n      },\n      saveAsImage: {},\n    }\n  },\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n  grid: {\n    left: '2%',\n    right: '2%',\n    top: '2%',\n    bottom: 24,\n    containLabel: true,\n  },\n  series,\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "none",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "name": "default"
+        },
+        "visualEditor": {
+          "code": "const getValue = (variable, defaultValue = 0) => {\n  const value = context.grafana.replaceVariables(variable);\n  const numericValue = Number(value);\n  return isNaN(numericValue) ? defaultValue : numericValue;\n};\n\nconst azureCosts = [\n  getValue('$azure12'),\n  getValue('$azure11'),\n  getValue('$azure10'),\n  getValue('$azure9'),\n  getValue('$azure8'),\n  getValue('$azure7'),\n  getValue('$azure6'),\n  getValue('$azure5'),\n  getValue('$azure4'),\n  getValue('$azure3'),\n  getValue('$azure2'),\n  getValue('$azure1'),\n  getValue('$azureAtual')\n];\n\nconst budget = [\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000'),\n  getValue('173000')\n];\n\nconst monthNames = [\"Jan\", \"Fev\", \"Mar\", \"Abr\", \"Mai\", \"Jun\", \"Jul\", \"Ago\", \"Set\", \"Out\", \"Nov\", \"Dez\"];\nconst currentMonth = new Date().getMonth();\nconst currentYear = new Date().getFullYear();\nconst months = [];\n\nfor (let i = 12; i >= 0; i--) {\n  let monthIndex = (currentMonth - i + 12) % 12;\n  let year = currentYear;\n  if (currentMonth - i < 0) {\n    year -= 1;\n  }\n  months.push(`${monthNames[monthIndex]}/${year.toString().slice(-2)}`);\n}\n\nconst values = [[\"Cost\", \"Month\", \"Provider\"]];\n\nfor (let i = 0; i < 13; i++) {\n  values.push([azureCosts[i], months[i], \"Azure\"]);\n  values.push([budget[i], months[i], \"Orçamento\"]);\n}\n\nconst providers = ['Azure', 'Orçamento'];\nconst datasetWithFilters = [];\nconst seriesList = [];\n\ncontext.echarts.util.each(providers, function (provider) {\n  var datasetId = 'dataset_' + provider;\n\n\n  let color;\n  switch (provider) {\n    case 'AWS': color = '#FF9900'; break;\n    case 'Azure': color = '#0078D4'; break;\n    case 'GCP': color = '#34A853'; break;\n    case 'OCI': color = '#F80000'; break;\n    case 'Orçamento': color = '#F80000'; break;\n  }\n\n  datasetWithFilters.push({\n    id: datasetId,\n    fromDatasetId: 'dataset_raw',\n    transform: {\n      type: 'filter',\n      config: {\n        and: [{ dimension: 'Provider', '=': provider }]\n      }\n    }\n  });\n\n  const thresholdValue = 173000;\n\n  seriesList.push({\n    type: 'line',\n    datasetId: datasetId,\n    showSymbol: false,\n    name: provider,\n    lineStyle: { color: color, width: 3 },\n    markLine: {\n      silent: true,\n      animation: false,\n      symbol: 'none',\n    },\n    endLabel: {\n      show: true,\n      formatter: function (params) {\n        const formattedValue = new Intl.NumberFormat('pt-BR', {\n          style: 'currency',       \n          currency: 'BRL',      \n          minimumFractionDigits: 2, \n          maximumFractionDigits: 2\n        }).format(params.value[0]);\n        return formattedValue;\n      }\n    },\n    labelLayout: { moveOverlap: 'shiftY' },\n    emphasis: { focus: 'series' },\n    encode: {\n      x: 'Month',\n      y: 'Cost',\n      label: ['Provider', 'Cost'],\n      itemName: 'Month',\n      tooltip: ['Cost']\n    }\n  });\n});\n\n\nreturn {\n  animationDuration: 3000,\n  dataset: [\n    { id: 'dataset_raw', source: values },\n    ...datasetWithFilters\n  ],\n  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: {\n      type: 'line',\n      lineStyle: {\n        color: function (params) {\n          switch (params.seriesData[0].data[2]) {\n            case 'AWS': return '#FF9900';\n            case 'Azure': return '#0078D4';\n            case 'GCP': return '#34A853';\n            case 'OCI': return '#F80000';\n            case 'Orçamento': return '#F80000';\n            default: return '#000000';\n          }\n        }\n      }\n    },\n    formatter: function (params) {\n      let result = params[0].axisValue + '<br/>';\n      params.forEach(function (item) {\n        const color =\n          item.seriesName === 'AWS' ? '#FF9900' :\n            item.seriesName === 'Azure' ? '#0078D4' :\n              item.seriesName === 'GCP' ? '#34A853' :\n                item.seriesName === 'OCI' ? '#F80000' :\n                  item.seriesName === 'Orçamento' ? '#F80000' : '#F80000';\n        result += '<span style=\"color:' + color + ';\">●</span> ' +\n          new Intl.NumberFormat('pt-BR', {\n            style: 'currency',     \n            currency: 'BRL',       \n            minimumFractionDigits: 2,  \n            maximumFractionDigits: 2\n          }).format(item.data[0]) + '<br/>';\n      });\n      return result;\n    },\n    textStyle: { color: '#000000' }\n  },\n  xAxis: {\n    type: 'category',\n    nameLocation: 'middle',\n    data: months\n  },\n  yAxis: { name: '' },\n  legend: {\n    data: [{ name: 'Azure', icon: 'roundRect', textStyle: { color: '#d4d4d4' }, itemStyle: { color: '#0078D4' } },\n    { name: 'Orçamento', icon: 'roundRect', textStyle: { color: '#d4d4d4' }, itemStyle: { color: '#F80000' } }],\n    top: '15px',\n    left: 'center',\n    selectedMode: 'multiple',\n    textStyle: { color: '#000000' }\n  },\n  grid: { right: 80, left: 70, bottom: \"50px\" },\n  series: seriesList\n};\n",
+          "dataset": [
+            {
+              "name": "total_custo",
+              "source": "A"
+            },
+            {
+              "name": "mes",
+              "source": "A"
+            }
+          ],
+          "series": []
+        }
+      },
+      "pluginVersion": "6.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "queryType": "randomWalk",
+          "refId": "A"
+        }
+      ],
+      "title": "Custo mensal dos últimos 12 meses (R$)",
+      "type": "volkovlabs-echarts-panel"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "noValue": "R$2.07M",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-yellow",
+                "value": 1800000
+              },
+              {
+                "color": "dark-red",
+                "value": 2076000
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 14
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Orçamento anual",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-yellow",
+                "value": 1800000
+              },
+              {
+                "color": "dark-red",
+                "value": 2076000
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 14
+      },
+      "id": 42,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT SUM(rm.total_custo)\r\nFROM resumo_soma_dia_mes_ano_recurso rm\r\nJOIN recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\nWHERE rn.id_provedor IN ('2', '4')\r\n  AND ano = EXTRACT(year FROM CURRENT_DATE)\r\n  AND rn.nome IN ($servico)\r\n  AND rn.regiao IN ($regiao)\r\n  AND rn.tipo_recurso IN ($recurso);",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Acumulado do ano",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "displayName": "R$",
+          "mappings": [],
+          "noValue": "R$ 0,00",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-yellow",
+                "value": 140000
+              },
+              {
+                "color": "dark-red",
+                "value": 173000
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 14
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT SUM(rm.total_custo)\r\nFROM resumo_soma_dia_mes_ano_recurso rm\r\nJOIN recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\nWHERE rn.id_provedor IN ('2', '4')\r\n  AND ano = EXTRACT(year FROM CURRENT_DATE - INTERVAL '1 month')\r\n  AND mes = EXTRACT(month FROM CURRENT_DATE - INTERVAL '1 month')\r\n  AND rn.nome IN ($servico)\r\n  AND rn.regiao IN ($regiao)\r\n  AND rn.tipo_recurso IN ($recurso);",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Custo do ultimo mês",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "displayName": "R$",
+          "mappings": [],
+          "noValue": "R$ 0,00",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 140000
+              },
+              {
+                "color": "dark-red",
+                "value": 173000
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 14
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT SUM(rm.total_custo)\r\nFROM resumo_soma_dia_mes_ano_recurso rm\r\nJOIN recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\nWHERE rn.id_provedor IN ('2', '4')\r\n  AND rn.nome IN ($servico)\r\n  AND rn.regiao IN ($regiao)\r\n  AND rn.tipo_recurso IN ($recurso)\r\n  AND ano = EXTRACT(year FROM CURRENT_DATE)\r\n  AND mes = EXTRACT(month FROM CURRENT_DATE);\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Custo do mês atual",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "displayName": "R$",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-yellow",
+                "value": 140000
+              },
+              {
+                "color": "dark-red",
+                "value": 173000
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 14
+      },
+      "id": 32,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH ultimos_tres_meses AS (\r\n    SELECT \r\n        rm.mes,\r\n        SUM(rm.total_custo) AS total_custo\r\n    FROM \r\n        resumo_soma_dia_mes_ano_recurso rm\r\n    JOIN \r\n        recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\n    WHERE \r\n        rn.id_provedor IN ('2', '4')\r\n        AND (rm.ano, rm.mes) >= (\r\n            EXTRACT(year FROM CURRENT_DATE) - CASE \r\n                WHEN EXTRACT(month FROM CURRENT_DATE) <= 3 THEN 1 \r\n                ELSE 0 \r\n            END, \r\n            EXTRACT(month FROM CURRENT_DATE) - 3\r\n        )\r\n        AND (rm.ano, rm.mes) < (EXTRACT(year FROM CURRENT_DATE), EXTRACT(month FROM CURRENT_DATE))\r\n        AND rn.nome IN ($servico)\r\n        AND rn.regiao IN ($regiao)\r\n        AND rn.tipo_recurso IN ($recurso)\r\n    GROUP BY \r\n        rm.mes\r\n),\r\nmedia_tres_meses AS (\r\n    SELECT \r\n        AVG(total_custo) AS media_custo\r\n    FROM \r\n        ultimos_tres_meses\r\n)\r\nSELECT \r\n    media_custo AS projecao_custo\r\nFROM \r\n    media_tres_meses;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Projetado para o mês",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "displayName": "R$",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-yellow",
+                "value": 1800000
+              },
+              {
+                "color": "dark-red",
+                "value": 2076000
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 14
+      },
+      "id": 43,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH meses_passados AS (\r\n    SELECT\r\n        rm.mes,\r\n        SUM(rm.total_custo) AS total_custo\r\n    FROM\r\n        resumo_soma_dia_mes_ano_recurso rm\r\n    JOIN\r\n        recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\n    WHERE\r\n        rn.id_provedor IN ('2', '4')\r\n        AND rm.ano = EXTRACT(year FROM CURRENT_DATE)  -- Usa o ano atual\r\n        AND rn.nome IN ($servico)\r\n        AND (rn.regiao IN ($regiao) OR rn.regiao IS NULL OR rn.regiao = '')\r\n        AND rn.tipo_recurso IN ($recurso)\r\n    GROUP BY\r\n        rm.mes\r\n),\r\nmedia_mensal AS (\r\n    SELECT\r\n        AVG(total_custo) AS media_custo_mensal\r\n    FROM\r\n        meses_passados\r\n),\r\nprojecao_ano AS (\r\n    SELECT\r\n        SUM(total_custo) AS total_acumulado_ano,\r\n        12 - COUNT(mes) AS meses_faltantes\r\n    FROM\r\n        meses_passados\r\n)\r\nSELECT\r\n    total_acumulado_ano + (media_custo_mensal * meses_faltantes) AS projecao_total_ano\r\nFROM\r\n    media_mensal, projecao_ano;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Projeção anual",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "description": "🟢Dentro do orçamento\n\n🟡Próximo ao limite do orçamento\n\n🔴Orçamento limite",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisWidth": 60,
+            "fillOpacity": 85,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 3,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-yellow",
+                "value": 155000
+              },
+              {
+                "color": "dark-red",
+                "value": 173000
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 41,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.89,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "normal",
+        "text": {
+          "valueSize": 20
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "6.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH ultimos_tres_meses AS (\r\n    SELECT \r\n        rm.mes,\r\n        SUM(rm.total_custo) AS total_custo\r\n    FROM \r\n        resumo_soma_dia_mes_ano_recurso rm\r\n    JOIN \r\n        recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\n    WHERE \r\n        (rm.ano, rm.mes) >= (\r\n            EXTRACT(year FROM CURRENT_DATE) - CASE \r\n                WHEN EXTRACT(month FROM CURRENT_DATE) <= 3 THEN 1 \r\n                ELSE 0 \r\n            END, \r\n            EXTRACT(month FROM CURRENT_DATE) - 3\r\n        )\r\n        AND rn.nome IN ($servico)\r\n        AND (rn.regiao IN ($regiao) OR rn.regiao IS NULL OR rn.regiao = '')\r\n        AND rn.tipo_recurso IN ($recurso)\r\n        AND rm.ano IN ($ano)\r\n        AND rm.mes IN ($mes)\r\n    GROUP BY \r\n        rm.mes\r\n),\r\nmedia_tres_meses AS (\r\n    SELECT \r\n        AVG(total_custo) AS media_custo\r\n    FROM \r\n        ultimos_tres_meses\r\n)\r\nSELECT * FROM (\r\n    SELECT \r\n        CASE \r\n            WHEN rm.mes = 1 THEN 'Jan/' || $ano1\r\n            WHEN rm.mes = 2 THEN 'Fev/' || $ano1\r\n            WHEN rm.mes = 3 THEN 'Mar/' || $ano1\r\n            WHEN rm.mes = 4 THEN 'Abr/' || $ano1\r\n            WHEN rm.mes = 5 THEN 'Mai/' || $ano1\r\n            WHEN rm.mes = 6 THEN 'Jun/' || $ano1\r\n            WHEN rm.mes = 7 THEN 'Jul/' || $ano1\r\n            WHEN rm.mes = 8 THEN 'Ago/' || $ano1\r\n            WHEN rm.mes = 9 THEN 'Set/' || $ano1\r\n            WHEN rm.mes = 10 THEN 'Out/' || $ano1\r\n            WHEN rm.mes = 11 THEN 'Nov/' || $ano1\r\n            WHEN rm.mes = 12 THEN 'Dez/' || $ano1\r\n        END AS mes,\r\n        SUM(rm.total_custo) AS total_custo,\r\n        NULL AS projecao\r\n    FROM \r\n        resumo_soma_dia_mes_ano_recurso rm\r\n    JOIN \r\n        recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\r\n    WHERE \r\n        rn.nome IN ($servico)\r\n        AND (rn.regiao IN ($regiao) OR rn.regiao IS NULL OR rn.regiao = '')\r\n        AND rn.tipo_recurso IN ($recurso)\r\n        AND rm.ano IN ($ano)\r\n        AND rm.mes IN ($mes)\r\n    GROUP BY \r\n        rm.mes\r\n\r\n    UNION ALL\r\n\r\n    SELECT \r\n        'Projeção mês atual' AS mes,\r\n        NULL AS total_custo,\r\n        mt.media_custo AS projecao\r\n    FROM \r\n        media_tres_meses mt\r\n) AS result\r\nORDER BY \r\n    CASE \r\n        WHEN mes = 'Jan/' || $ano1 THEN 1\r\n        WHEN mes = 'Fev/' || $ano1 THEN 2\r\n        WHEN mes = 'Mar/' || $ano1 THEN 3\r\n        WHEN mes = 'Abr/' || $ano1 THEN 4\r\n        WHEN mes = 'Mai/' || $ano1 THEN 5\r\n        WHEN mes = 'Jun/' || $ano1 THEN 6\r\n        WHEN mes = 'Jul/' || $ano1 THEN 7\r\n        WHEN mes = 'Ago/' || $ano1 THEN 8\r\n        WHEN mes = 'Set/' || $ano1 THEN 9\r\n        WHEN mes = 'Out/' || $ano1 THEN 10\r\n        WHEN mes = 'Nov/' || $ano1 THEN 11\r\n        WHEN mes = 'Dez/' || $ano1 THEN 12\r\n        ELSE 13 -- Coloca 'Projeção mês atual' após os meses\r\n    END;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Custo mensal (R$)",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "noValue": "R$ 0,00",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green"
+              },
+              {
+                "color": "dark-green",
+                "value": 30000
+              },
+              {
+                "color": "dark-red",
+                "value": 39900
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 28
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select\r\nsum(total_custo)\r\nfrom\r\nresumo_soma_dia_mes_ano_recurso rm\r\njoin recurso_nuvem rn\r\non rn.id_recurso = rm.id_recurso_resumo \r\nwhere\r\nrm.ano =  extract(year from date_trunc('week', CURRENT_DATE)) \r\nand rm.mes = extract(month from date_trunc('week', CURRENT_DATE)) \r\nand dia >= extract(day from date_trunc('week', CURRENT_DATE - INTERVAL '7 day'))\r\nand id_provedor in ('2', '4')",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Custo da semana anterior",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 4,
+        "y": 28
+      },
+      "id": 14,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rn.tipo_recurso,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    AND rm.dia >= EXTRACT(day FROM date_trunc('week', CURRENT_DATE - INTERVAL '7 days'))\r\n    AND rn.id_provedor IN ('2', '4')\r\n    AND rn.nome IN ($servico)\r\n    AND rn.regiao IN ($regiao)\r\n    AND rn.tipo_recurso IN ($recurso)\r\nGROUP BY\r\n    rn.tipo_recurso\r\nORDER BY\r\n    total_custo DESC\r\nLIMIT 5;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 5 ofensores por serviço - semana anterior",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "objeto"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 11,
+        "y": 28
+      },
+      "id": 39,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rn.nome,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    and dia >= extract(day from date_trunc('week', CURRENT_DATE - INTERVAL '7 days'))\r\n    AND rn.id_provedor IN ('2', '4')\r\n    AND rn.nome IN ($servico)\r\n    AND rn.regiao IN ($regiao)\r\n    AND rn.tipo_recurso IN ($recurso)\r\nGROUP BY\r\n    rn.nome\r\nORDER BY\r\n    total_custo DESC\r\nLIMIT 5;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 5 ofensores por SKU - semana anterior",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "objeto"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 28
+      },
+      "id": 26,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rn.regiao,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    and dia >= extract(day from date_trunc('week', CURRENT_DATE - INTERVAL '7 days'))\r\n    AND rn.id_provedor IN ('2', '4')\r\n      AND rn.nome IN ($servico)\r\n  AND rn.regiao IN ($regiao)\r\n  AND rn.tipo_recurso IN ($recurso)\r\nGROUP BY\r\n    rn.regiao\r\nORDER BY\r\n    total_custo DESC\r\nLIMIT 5;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 5 ofensores por região - semana anterior",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "objeto"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "noValue": "R$ 0,00",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green"
+              },
+              {
+                "color": "dark-yellow",
+                "value": 5000
+              },
+              {
+                "color": "dark-red",
+                "value": 5700
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 34
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 40
+        },
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "select\r\nsum(total_custo)\r\nfrom\r\nresumo_soma_dia_mes_ano_recurso rm\r\njoin recurso_nuvem rn\r\non rn.id_recurso = rm.id_recurso_resumo \r\nwhere\r\nrm.ano =  extract(year from date_trunc('day', CURRENT_DATE)) \r\nand rm.mes = extract(month from date_trunc('day', CURRENT_DATE))\r\n and dia >= extract(day from date_trunc('day', CURRENT_DATE - INTERVAL '1 day'))\r\nand id_provedor in ('2', '4')",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Custo do dia anterior",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "noValue": "Atualizando",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 4,
+        "y": 34
+      },
+      "id": 38,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rn.tipo_recurso,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    and dia >= extract(day from date_trunc('day', CURRENT_DATE - INTERVAL '1 day'))\r\n    AND rn.id_provedor IN ('2', '4')\r\nGROUP BY\r\n    rn.tipo_recurso\r\nORDER BY\r\n    total_custo DESC\r\nLIMIT 5;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 5 ofensores por serviço - dia anterior",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "objeto"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 11,
+        "y": 34
+      },
+      "id": 40,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rn.nome,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    and dia >= extract(day from date_trunc('day', CURRENT_DATE - INTERVAL '1 day'))\r\n    AND rn.id_provedor IN ('2', '4')\r\n    AND rn.nome IN ($servico)\r\n    AND rn.regiao IN ($regiao)\r\n    AND rn.tipo_recurso IN ($recurso)\r\nGROUP BY\r\n    rn.nome\r\nORDER BY\r\n    total_custo DESC\r\nLIMIT 5;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 5 ofensores por SKU - dia anterior",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "objeto"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "Atualizando",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyBRL"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 34
+      },
+      "id": 37,
+      "options": {
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rn.regiao,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    and dia >= extract(day from date_trunc('day', CURRENT_DATE - INTERVAL '1 day'))\r\n    AND rn.id_provedor IN ('2', '4')\r\nGROUP BY\r\n    rn.regiao\r\nORDER BY\r\n    total_custo DESC\r\nLIMIT 5;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Top 5 ofensores por região - dia anterior",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "objeto"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": false
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": false,
+            "axisLabel": "",
+            "axisPlacement": "right",
+            "fillOpacity": 100,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 2,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "decimals": 0,
+          "fieldMinMax": true,
+          "mappings": [],
+          "max": 15000,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 4500
+              },
+              {
+                "color": "dark-red",
+                "value": 5700
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_custo"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 25,
+      "options": {
+        "barRadius": 0.15,
+        "barWidth": 0.7,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "vertical",
+        "showValue": "auto",
+        "stacking": "none",
+        "text": {
+          "valueSize": 20
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "dia",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    rm.dia,\r\n    SUM(rm.total_custo)::decimal(30,2) AS total_custo\r\nFROM\r\n    resumo_soma_dia_mes_ano_recurso rm\r\nJOIN \r\n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo \r\nWHERE\r\n    rm.ano = EXTRACT(year FROM CURRENT_DATE)\r\n    AND rm.mes = EXTRACT(month FROM CURRENT_DATE)\r\n    AND rm.dia >= EXTRACT(day FROM date_trunc('month', CURRENT_DATE))\r\n    AND rn.id_provedor IN ('2', '4')\r\n    AND rn.nome IN ($servico)\r\n    AND rn.regiao IN ($regiao)\r\n    AND rn.tipo_recurso IN ($recurso)\r\nGROUP BY\r\n    rm.dia\r\nORDER BY\r\n    rm.dia;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Custo total diário (R$)",
+      "type": "barchart"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "2025",
+          "value": "2025"
+        },
+        "hide": 2,
+        "includeAll": false,
+        "label": "Ano",
+        "multi": false,
+        "name": "ano",
+        "options": [
+          {
+            "selected": false,
+            "text": "2022",
+            "value": "2022"
+          },
+          {
+            "selected": false,
+            "text": "2023",
+            "value": "2023"
+          },
+          {
+            "selected": false,
+            "text": "2024",
+            "value": "2024"
+          },
+          {
+            "selected": true,
+            "text": "2025",
+            "value": "2025"
+          }
+        ],
+        "query": "2022, 2023, 2024, 2025",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "25",
+          "value": "25"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT SUBSTRING($ano::TEXT FROM LENGTH($ano::TEXT) - 1 FOR 2);",
+        "hide": 2,
+        "includeAll": false,
+        "label": "",
+        "multi": false,
+        "name": "ano1",
+        "options": [],
+        "query": "SELECT SUBSTRING($ano::TEXT FROM LENGTH($ano::TEXT) - 1 FOR 2);",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 2,
+        "includeAll": true,
+        "label": "Mês",
+        "multi": true,
+        "name": "mes",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "01",
+            "value": "01"
+          },
+          {
+            "selected": false,
+            "text": "02",
+            "value": "02"
+          },
+          {
+            "selected": false,
+            "text": "03",
+            "value": "03"
+          },
+          {
+            "selected": false,
+            "text": "04",
+            "value": "04"
+          },
+          {
+            "selected": false,
+            "text": "05",
+            "value": "05"
+          },
+          {
+            "selected": false,
+            "text": "06",
+            "value": "06"
+          },
+          {
+            "selected": false,
+            "text": "07",
+            "value": "07"
+          },
+          {
+            "selected": false,
+            "text": "08",
+            "value": "08"
+          },
+          {
+            "selected": false,
+            "text": "09",
+            "value": "09"
+          },
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "11",
+            "value": "11"
+          },
+          {
+            "selected": false,
+            "text": "12",
+            "value": "12"
+          }
+        ],
+        "query": "01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "94.88",
+          "value": "94.88"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(rm.total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso rm\nJOIN \n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\nWHERE \n    rn.id_provedor in ('2', '4')\n    AND rm.ano IN ($ano)\n    AND rm.mes IN ($mes)\n    AND rn.nome IN ($servico)\n     AND (rn.regiao IN ($regiao) OR rn.regiao IS NULL OR rn.regiao = '')\n    AND rn.tipo_recurso IN ($recurso)\n",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure",
+        "options": [],
+        "query": "SELECT \n    SUM(rm.total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso rm\nJOIN \n    recurso_nuvem rn ON rn.id_recurso = rm.id_recurso_resumo\nWHERE \n    rn.id_provedor in ('2', '4')\n    AND rm.ano IN ($ano)\n    AND rm.mes IN ($mes)\n    AND rn.nome IN ($servico)\n     AND (rn.regiao IN ($regiao) OR rn.regiao IS NULL OR rn.regiao = '')\n    AND rn.tipo_recurso IN ($recurso)\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "select nome from recurso_nuvem \nWHERE id_provedor in ('2', '4')\n",
+        "hide": 2,
+        "includeAll": true,
+        "label": "SKU",
+        "multi": true,
+        "name": "servico",
+        "options": [],
+        "query": "select nome from recurso_nuvem \nWHERE id_provedor in ('2', '4')\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "select regiao from recurso_nuvem \nWHERE id_provedor in ('2', '4')\n",
+        "hide": 2,
+        "includeAll": true,
+        "label": "Região",
+        "multi": true,
+        "name": "regiao",
+        "options": [],
+        "query": "select regiao from recurso_nuvem \nWHERE id_provedor in ('2', '4')\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "select tipo_recurso from recurso_nuvem \nWHERE id_provedor in ('2', '4')\n",
+        "hide": 2,
+        "includeAll": true,
+        "label": "Serviço",
+        "multi": true,
+        "name": "recurso",
+        "options": [],
+        "query": "select tipo_recurso from recurso_nuvem \nWHERE id_provedor in ('2', '4')\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '12 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '12 months')\n    );\n",
+        "hide": 2,
+        "includeAll": false,
+        "label": "",
+        "multi": false,
+        "name": "azure12",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '12 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '12 months')\n    );\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '11 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '11 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure11",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '11 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '11 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '10 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '10 months')\n    );\n",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure10",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '10 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '10 months')\n    );\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '9 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '9 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure9",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '9 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '9 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '8 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '8 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure8",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '8 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '8 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '7 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '7 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure7",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '7 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '7 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '6 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '6 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure6",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '6 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '6 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '5 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '5 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure5",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '5 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '5 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '4 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '4 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure4",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '4 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '4 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '3 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '3 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure3",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '3 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '3 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '2 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '2 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure2",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '2 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '2 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 months')\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azure1",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 months'),\n        EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 months')\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "b6c385f5-285b-4ac9-aa76-3490faf2960e"
+        },
+        "definition": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE),\n        EXTRACT(MONTH FROM CURRENT_DATE)\n    );",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "azureAtual",
+        "options": [],
+        "query": "SELECT \n    SUM(total_custo)::decimal(30,2)\nFROM \n    resumo_soma_dia_mes_ano_recurso\nWHERE \n    cloudproviderid IN ('2', '4')\n    AND (ano, mes) = (\n        EXTRACT(YEAR FROM CURRENT_DATE),\n        EXTRACT(MONTH FROM CURRENT_DATE)\n    );",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1y",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Azure",
+  "uid": "Azure",
+  "version": 17,
+  "weekStart": ""
+}
