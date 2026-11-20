@@ -22,7 +22,11 @@ _GATILHOS = re.compile(
 )
 
 # Credenciais embutidas em URL (postgresql://usuario:senha@host) e em DSN (password=...).
-_URL_COM_SENHA = re.compile(r"([a-z][a-z0-9+.-]*://[^\s:/@]+:)[^\s@]*@", re.IGNORECASE)
+# \S* é guloso: com "@" não codificado na senha (user:pa@ss@host), mascara até o ÚLTIMO "@".
+_URL_COM_SENHA = re.compile(r"([a-z][a-z0-9+.-]*://[^\s:/@]+:)\S*@", re.IGNORECASE)
+# Host citado entre aspas contendo "@" (ex.: failed to resolve host 'ss@10.0.0.5'): o que vem
+# antes do último "@" pode ser resto de senha → mascarado.
+_HOST_COM_ARROBA = re.compile(r"(['\"])[^'\"\s]*@([^'\"@\s]*['\"])")
 _DSN_SENHA = re.compile(r"(password\s*=\s*)('[^']*'|\S+)", re.IGNORECASE)
 # Sequências longas (base64/hex) que podem ser material de chave.
 _LONGO = re.compile(r"[A-Za-z0-9+/=_-]{40,}")
@@ -83,6 +87,7 @@ def sanitizar_conexao(texto: object, url: str | None = None, limite: int = LIMIT
     if url:
         s = s.replace(url, "[CV_DB_URL]")
     s = _URL_COM_SENHA.sub(r"\1***@", s)
+    s = _HOST_COM_ARROBA.sub(r"\1***@\2", s)
     s = _DSN_SENHA.sub(r"\1***", s)
     s = " ".join(s.split())
     if len(s) > limite:

@@ -85,3 +85,17 @@ def test_falha_de_conexao_loga_diagnostico_sem_senha_e_com_backoff(caplog):
     assert all("SEGREDO_TESTE_X" not in m for m in mensagens)
     assert all("OperationalError" in m and "password authentication failed" in m for m in mensagens)
     assert any("[CV_DB_URL]" in m or "***" in m for m in mensagens)
+
+
+@pytest.mark.parametrize("mensagem,segredo", [
+    # "@" não codificado na senha: a URL não pode vazar o pedaço depois do primeiro "@".
+    ("invalid URI postgresql://svc_cv_collector:SEGREDO@TESTE_Y@10.0.0.5:5432/cloudvista", "TESTE_Y"),
+    ("invalid URI postgresql://svc_cv_collector:SEGREDO@TESTE_Y@10.0.0.5:5432/cloudvista", "SEGREDO"),
+    # libpq/psycopg tentam resolver "TESTE_Z@10.0.0.5" como host.
+    ('could not translate host name "TESTE_Z@10.0.0.5" to address: Name or service not known', "TESTE_Z"),
+    ("failed to resolve host 'TESTE_W@10.0.0.5': [Errno -2] Name or service not known", "TESTE_W"),
+])
+def test_arroba_nao_codificado_na_senha_nao_vaza(mensagem, segredo):
+    s = sanitizar_conexao(mensagem)
+    assert segredo not in s and "***@" in s
+    assert "10.0.0.5" in s  # o host continua no diagnóstico
