@@ -9,12 +9,15 @@ public static class Politicas
     public const string Administrador = "Administrador";
     public const string Analista = "Analista";
     public const string Autorizado = "Autorizado";
+    /// <summary>Gravação de credencial: ADMINISTRADOR ou CLIENTE (o RLS garante "do próprio cliente").</summary>
+    public const string AdministradorOuCliente = "AdministradorOuCliente";
 
     public static void Registrar(AuthorizationOptions options)
     {
         options.AddPolicy(Administrador, p => p.RequireAuthenticatedUser().AddRequirements(new PerfilRequirement(Perfis.Administrador)));
         options.AddPolicy(Analista, p => p.RequireAuthenticatedUser().AddRequirements(new PerfilRequirement(Perfis.Administrador, Perfis.AnalistaFinOps)));
         options.AddPolicy(Autorizado, p => p.RequireAuthenticatedUser().AddRequirements(new PerfilRequirement(Perfis.Todos.ToArray())));
+        options.AddPolicy(AdministradorOuCliente, p => p.RequireAuthenticatedUser().AddRequirements(new PerfilRequirement(Perfis.Administrador, Perfis.Cliente)));
     }
 }
 

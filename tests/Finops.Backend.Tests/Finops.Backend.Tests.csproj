@@ -21,6 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Vetores AES-256-GCM gerados pela implementação Python de referência (contrato com o coletor). -->
+    <None Include="..\vetores\cofre_v1.json" Link="vetores\cofre_v1.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\backend\Finops.Backend.csproj" />
   </ItemGroup>
 

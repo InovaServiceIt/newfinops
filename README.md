@@ -55,6 +55,8 @@ docker run -p 5000:5000 -e AzureAd__TenantId=... -e AzureAd__ClientId=... -e Azu
 | `AzureAd__ClientId` | sim | App Registration do NewFinops |
 | `AzureAd__ClientSecret` | sim | Segredo da App Registration |
 | `ConnectionStrings__CloudVista` | sim (segredo) | Banco próprio `cloudvista` (usuário `svc_cv_api`, leitura e escrita com RLS). Sem ela a app sobe, mas as rotas `/api/*` (exceto health) respondem 503 |
+| `CV_MASTER_KEY_V1` | sim p/ cofre (segredo) | Chave mestra (KEK) do cofre de credenciais: base64 de 32 bytes. Rotação: `CV_MASTER_KEY_V2`, … (várias podem coexistir) |
+| `CV_MASTER_KEY_ATUAL` | sim p/ cofre | Versão da KEK usada para cifrar DEKs novas (ex.: `1`). Ausente/inválida → cofre desativado (gravação de credencial responde 503) |
 | `ConnectionStrings__FinopsDb` | não (segredo) | Conexão com o `finopsdatabase`. A app força sessão **somente leitura**. Sem ela, a app sobe e `/api/health/db` responde `nao_configurado` |
 | `Cors__AllowedOrigins` | não | Origens extras, separadas por vírgula. Vazio = mesma origem (SPA servida pelo .NET) |
 
@@ -80,6 +82,13 @@ npm run typecheck
 - Usuário autenticado no Entra mas sem cadastro ativo → `/api/*` responde 403 `{ codigo: "USUARIO_NAO_AUTORIZADO" }` e o front mostra "Acesso não autorizado".
 - `cliente` e `usuario_cliente` têm RLS: toda consulta passa por `CloudVistaDb.ExecutarComContextoAsync`, que define `app.perfil` e `app.usuario_id` com `set_config(..., true)` (escopo da transação). Sem contexto, o RLS retorna zero linhas.
 - Cadastros de clientes e usuários em **Configurações** (só administrador; o backend exige a política `Administrador`).
+
+## Cofre de credenciais
+
+- Cifragem em envelope AES-256-GCM: KEK (variável `CV_MASTER_KEY_V{n}`) → DEK por cliente (`chave_dados`) → credencial (`credencial.conteudo_cifrado`).
+- Formato binário v1: `0x01 | nonce(12) | ct | tag(16)`; AAD `cv:dek:v1:{cliente}:{versao_kek}` e `cv:cred:v1:{conta}:{tipo}`.
+- A API só cifra e grava (o `svc_cv_api` não tem SELECT em `conteudo_cifrado`); quem decifra é o coletor.
+- Vetores de interoperabilidade: `tests/vetores/cofre_v1.json` (gerados por `tests/vetores/gerar_cofre_v1.py` com o pacote Python `cryptography`).
 
 ## Regras
 

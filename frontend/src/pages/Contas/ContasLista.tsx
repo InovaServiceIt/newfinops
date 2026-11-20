@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cloud, Pencil } from 'lucide-react';
+import { Cloud, KeyRound, Pencil, Power } from 'lucide-react';
 import { mensagemDeErro } from '../../services/api';
 import { listarContas, type ContaCloud, type Provedor } from '../../services/contas';
 import { LISTA_PROVEDORES, PROVEDORES, ROTULO_ESCOPO } from './provedores';
+import { STATUS } from './credenciais';
+import CredencialModal from './CredencialModal';
+import type { StatusCredencial } from '../../services/credencial';
 import './Contas.css';
 
 interface ContasListaProps {
@@ -23,6 +26,8 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
   const [cliente, setCliente] = useState<string>('');
   const [provedor, setProvedor] = useState<Provedor | ''>('');
   const [incluirInativas, setIncluirInativas] = useState(false);
+  const [credencialDe, setCredencialDe] = useState<ContaCloud | null>(null);
+  const [recarga, setRecarga] = useState(0);
 
   const carregar = useCallback(() => {
     setErro(null);
@@ -31,7 +36,7 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
       .catch((e) => setErro(mensagemDeErro(e, 'Não foi possível carregar as contas.')));
   }, [incluirInativas]);
 
-  useEffect(carregar, [carregar, versao]);
+  useEffect(carregar, [carregar, versao, recarga]);
 
   const clientes = useMemo(() => {
     const mapa = new Map<number, string>();
@@ -79,8 +84,8 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
           <table className="ui-table">
             <thead>
               <tr>
-                <th>Cliente</th><th>Provedor</th><th>Nome</th><th>Identificador</th><th>Escopo</th><th>Região</th><th>Situação</th>
-                {gerenciavel && <th className="contas-col-acoes">Ações</th>}
+                <th>Cliente</th><th>Provedor</th><th>Nome</th><th>Identificador</th><th>Escopo</th><th>Região</th><th>Situação</th><th>Credencial</th>
+                <th className="contas-col-acoes">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -95,22 +100,37 @@ const ContasLista: React.FC<ContasListaProps> = ({ gerenciavel, onEditar, onAlte
                   <td>{ROTULO_ESCOPO[c.escopo] ?? c.escopo}</td>
                   <td>{c.regiaoPadrao ?? '—'}</td>
                   <td><span className={`ui-badge ${c.ativo ? 'ui-badge-success' : 'ui-badge-warning'}`}>{c.ativo ? 'Ativa' : 'Inativa'}</span></td>
+                  <td>
+                    <span className={`ui-badge ${STATUS[(c.credencialStatus as StatusCredencial | null) ?? 'SEM']?.classe ?? 'ui-badge-info'}`}>
+                      {STATUS[(c.credencialStatus as StatusCredencial | null) ?? 'SEM']?.rotulo ?? c.credencialStatus}
+                    </span>
+                  </td>
+                  <td className="contas-col-acoes">
+                    <button type="button" className="ui-btn ui-btn-ghost contas-icone" onClick={() => setCredencialDe(c)}
+                      title="Credencial" aria-label={`Credencial de ${c.nome}`}>
+                      <KeyRound size={16} />
+                    </button>
                   {gerenciavel && (
-                    <td className="contas-col-acoes">
-                      <button type="button" className="ui-btn ui-btn-ghost" onClick={() => onEditar?.(c)} aria-label={`Editar ${c.nome}`}>
-                        <Pencil size={14} /> Editar
+                    <>
+                      <button type="button" className="ui-btn ui-btn-ghost contas-icone" onClick={() => onEditar?.(c)}
+                        title="Editar" aria-label={`Editar ${c.nome}`}>
+                        <Pencil size={16} />
                       </button>
-                      <button type="button" className="ui-btn ui-btn-ghost" onClick={() => onAlternarAtivo?.(c)}>
-                        {c.ativo ? 'Desativar' : 'Ativar'}
+                      <button type="button" className="ui-btn ui-btn-ghost contas-icone" onClick={() => onAlternarAtivo?.(c)}
+                        title={c.ativo ? 'Desativar' : 'Ativar'} aria-label={`${c.ativo ? 'Desativar' : 'Ativar'} ${c.nome}`}>
+                        <Power size={16} />
                       </button>
-                    </td>
+                    </>
                   )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <CredencialModal conta={credencialDe} onFechar={() => setCredencialDe(null)} onAlterado={() => setRecarga((r) => r + 1)} />
     </section>
   );
 };

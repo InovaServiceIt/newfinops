@@ -1,0 +1,30 @@
+{
+  "descricao": "Vetores AES-256-GCM do cofre CloudVista, formato v1: 0x01 | nonce(12) | ct | tag(16). Gerados com o pacote Python 'cryptography' (AESGCM). Chaves e nonces FIXOS, só para teste.",
+  "versao_formato": 1,
+  "casos": [
+    {
+      "nome": "credencial_aws_access_key",
+      "chave_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "nonce_hex": "0f0e0d0c0b0a090807060504",
+      "aad": "cv:cred:v1:42:AWS_ACCESS_KEY",
+      "texto_claro": "{\"access_key_id\":\"EXEMPLO-FALSO-NAO-E-CHAVE\",\"secret_access_key\":\"SEGREDO_TESTE_valor_ficticio\"}",
+      "blob_hex": "010f0e0d0c0b0a090807060504df12d03f38b2dcddb4b4d42667f3ed2353445a388a14a1281964e8be7e59ff074acb8c6d6e6438c661e369cfbf2e5b607472902537dc3d88912f35a918123ca88815144c260beff31a446cf0037c31eea55321ebe70d21902fe974e26021ab33bccbbc7b4bb6cb8c2be94f2fcde557e5"
+    },
+    {
+      "nome": "dek_cifrada_com_kek",
+      "chave_hex": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "aad": "cv:dek:v1:7:1",
+      "texto_claro_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "blob_hex": "01a1a2a3a4a5a6a7a8a9aaabaced91478a24fe30c0ec35b7b1f4e00659b00a1850de255283702c25d900a7c47971e17d4d19d6214d9d6870358da38360"
+    },
+    {
+      "nome": "texto_vazio_aad_utf8",
+      "chave_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "nonce_hex": "000000000000000000000001",
+      "aad": "cv:cred:v1:1:OCI_API_KEY ção",
+      "texto_claro": "",
+      "blob_hex": "01000000000000000000000001afd9449e8d39c2d7cd764fa1766c8f5e"
+    }
+  ]
+}

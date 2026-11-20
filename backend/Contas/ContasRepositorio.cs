@@ -10,12 +10,13 @@ namespace Finops.Backend.Contas;
 public static class ContasSql
 {
     private const string Colunas = @"cc.id, cc.cliente_id, c.nome AS cliente_nome, cc.provedor, cc.nome, cc.identificador,
-       cc.escopo, cc.regiao_padrao, cc.ativo, cc.criado_em";
+       cc.escopo, cc.regiao_padrao, cc.ativo, cc.criado_em, cr.status AS credencial_status";
 
     public const string Listar = $@"
 SELECT {Colunas}
 FROM cloud_conta cc
 JOIN cliente c ON c.id = cc.cliente_id
+LEFT JOIN credencial cr ON cr.cloud_conta_id = cc.id
 WHERE (@cliente_id IS NULL OR cc.cliente_id = @cliente_id)
   AND (@provedor IS NULL OR cc.provedor = @provedor)
   AND (@incluir_inativas OR cc.ativo)
@@ -25,6 +26,7 @@ ORDER BY c.nome, cc.provedor, cc.nome";
 SELECT {Colunas}
 FROM cloud_conta cc
 JOIN cliente c ON c.id = cc.cliente_id
+LEFT JOIN credencial cr ON cr.cloud_conta_id = cc.id
 WHERE cc.id = @id";
 
     public const string ClienteAtivo = "SELECT ativo FROM cliente WHERE id = @cliente_id";
@@ -174,7 +176,7 @@ public sealed class ContasRepositorio
             lista.Add(new ContaSaida(
                 r.GetInt64(0), r.GetInt64(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetString(5),
                 r.GetString(6), r.IsDBNull(7) ? null : r.GetString(7), r.GetBoolean(8),
-                r.GetFieldValue<DateTimeOffset>(9), CredencialStatus: null));
+                r.GetFieldValue<DateTimeOffset>(9), r.IsDBNull(10) ? null : r.GetString(10)));
         }
         return lista;
     }

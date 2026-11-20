@@ -11,12 +11,14 @@ namespace Finops.Backend.Controllers
     {
         private readonly FinopsDb _db;
         private readonly CloudVistaDb _cloudVista;
+        private readonly Finops.Backend.Cofre.ChavesMestras _chaves;
         private readonly ILogger<HealthController> _logger;
 
-        public HealthController(FinopsDb db, CloudVistaDb cloudVista, ILogger<HealthController> logger)
+        public HealthController(FinopsDb db, CloudVistaDb cloudVista, Finops.Backend.Cofre.ChavesMestras chaves, ILogger<HealthController> logger)
         {
             _db = db;
             _cloudVista = cloudVista;
+            _chaves = chaves;
             _logger = logger;
         }
 
@@ -47,7 +49,8 @@ namespace Finops.Backend.Controllers
                 }
             }
 
-            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow, cloudVistaDb });
+            var cofre = _chaves.Configurado ? "ok" : "nao_configurado";
+            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow, cloudVistaDb, cofre });
         }
 
         /// <summary>

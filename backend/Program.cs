@@ -83,6 +83,12 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHand
 builder.Services.AddSingleton<Finops.Backend.Admin.AdminRepositorio>();
 builder.Services.AddSingleton<Finops.Backend.Contas.ContasRepositorio>();
 
+// ── Cofre de credenciais: KEK de CV_MASTER_KEY_V{n} / CV_MASTER_KEY_ATUAL (nunca em appsettings) ──
+builder.Services.AddSingleton(sp => Finops.Backend.Cofre.ChavesMestras.Carregar(
+    sp.GetRequiredService<IConfiguration>(),
+    sp.GetRequiredService<ILoggerFactory>().CreateLogger("Finops.Backend.Cofre.ChavesMestras")));
+builder.Services.AddSingleton<Finops.Backend.Cofre.CofreServico>();
+
 // ── Visão Geral ──
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(TimeProvider.System);
@@ -109,6 +115,7 @@ var app = builder.Build();
 // Instancia já no startup para registrar no log se a conexão com o banco está configurada.
 app.Services.GetRequiredService<FinopsDb>();
 app.Services.GetRequiredService<CloudVistaDb>();
+app.Services.GetRequiredService<Finops.Backend.Cofre.ChavesMestras>();
 
 if (app.Environment.IsDevelopment())
 {
