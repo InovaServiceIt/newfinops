@@ -20,7 +20,8 @@ public sealed record AtivoEntrada(bool Ativo);
 public sealed record UsuarioCriacao(string? Email, string? Nome, string? Perfil, long[]? ClienteIds);
 public sealed record UsuarioAlteracao(string? Nome, string? Perfil, long[]? ClienteIds);
 
-public sealed record ClienteSaida(long Id, string Nome, string Apelido, string? Documento, bool Ativo, DateTimeOffset CriadoEm, DateTimeOffset? AtualizadoEm);
+/// <summary>Cliente. <see cref="ContasAtivas"/> só vem preenchido na listagem.</summary>
+public sealed record ClienteSaida(long Id, string Nome, string Apelido, string? Documento, bool Ativo, DateTimeOffset CriadoEm, DateTimeOffset? AtualizadoEm, int? ContasAtivas = null);
 public sealed record ClienteResumo(long Id, string Nome, string Apelido);
 public sealed record UsuarioAfetado(long Id, string Nome, string Email);
 public sealed record UsuarioSaida(long Id, string Email, string Nome, string Perfil, bool Ativo, DateTimeOffset? UltimoLoginEm, IReadOnlyList<ClienteResumo> Clientes);

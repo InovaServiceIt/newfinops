@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Search, PieChart, Tags,
   Lightbulb, AlertTriangle, Wallet, Server,
-  Receipt, Bot, Settings,
+  Receipt, Bot, Settings, Cloud,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -43,6 +43,7 @@ export const MENU: MenuSection[] = [
     items: [
       { title: 'Faturamento (fator)', path: '/faturamento', icon: Receipt },
       { title: 'Copiloto IA', path: '/copiloto-ia', icon: Bot },
+      { title: 'Contas de cloud', path: '/contas-de-cloud', icon: Cloud },
       { title: 'Configurações', path: '/configuracoes', icon: Settings, adminOnly: true },
     ],
   },

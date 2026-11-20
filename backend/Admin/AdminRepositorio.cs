@@ -10,7 +10,13 @@ public static class AdminSql
 {
     private const string ColunasCliente = "id, nome, apelido, documento, ativo, criado_em, atualizado_em";
 
-    public const string ListarClientes = $"SELECT {ColunasCliente} FROM cliente WHERE (@incluir_inativos OR ativo) ORDER BY nome";
+    /// <summary>Lista com a contagem de contas de cloud ativas por cliente (coluna "Contas").</summary>
+    public const string ListarClientes = $@"
+SELECT {ColunasCliente},
+       (SELECT count(*) FROM cloud_conta cc WHERE cc.cliente_id = cliente.id AND cc.ativo) AS contas_ativas
+FROM cliente
+WHERE (@incluir_inativos OR ativo)
+ORDER BY nome";
     public const string ClientesDoUsuarioAtual = "SELECT id, nome, apelido FROM cliente WHERE ativo ORDER BY nome";
     public const string CriarCliente = $"INSERT INTO cliente (nome, apelido, documento, ativo) VALUES (@nome, @apelido, @documento, true) RETURNING {ColunasCliente}";
     public const string AtualizarCliente = $"UPDATE cliente SET nome = @nome, apelido = @apelido, documento = @documento WHERE id = @id RETURNING {ColunasCliente}";
@@ -250,7 +256,8 @@ public sealed class AdminRepositorio
                 r.IsDBNull(3) ? null : r.GetString(3),
                 r.GetBoolean(4),
                 r.GetFieldValue<DateTimeOffset>(5),
-                r.IsDBNull(6) ? null : r.GetFieldValue<DateTimeOffset>(6)));
+                r.IsDBNull(6) ? null : r.GetFieldValue<DateTimeOffset>(6),
+                r.FieldCount > 7 && !r.IsDBNull(7) ? (int)r.GetInt64(7) : null));
         }
         return lista;
     }

@@ -134,7 +134,7 @@ const ClientesAba: React.FC = () => {
         <div className="ui-table-wrap">
           <table className="ui-table">
             <thead>
-              <tr><th>Nome</th><th>Apelido</th><th>Documento</th><th>Situação</th><th className="cfg-col-acoes">Ações</th></tr>
+              <tr><th>Nome</th><th>Apelido</th><th>Documento</th><th className="num">Contas</th><th>Situação</th><th className="cfg-col-acoes">Ações</th></tr>
             </thead>
             <tbody>
               {visiveis.map((c) => (
@@ -142,6 +142,7 @@ const ClientesAba: React.FC = () => {
                   <td>{c.nome}</td>
                   <td><code>{c.apelido}</code></td>
                   <td>{c.documento ?? '—'}</td>
+                  <td className="num" title="Contas de cloud ativas">{c.contasAtivas ?? 0}</td>
                   <td><span className={`ui-badge ${c.ativo ? 'ui-badge-success' : 'ui-badge-warning'}`}>{c.ativo ? 'Ativo' : 'Inativo'}</span></td>
                   <td className="cfg-col-acoes">
                     <button type="button" className="ui-btn ui-btn-ghost" onClick={() => abrir(c)} aria-label={`Editar ${c.nome}`}>

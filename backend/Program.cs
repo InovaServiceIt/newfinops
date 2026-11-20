@@ -81,6 +81,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Finops.Backend.Identidade.UsuarioAtualServico>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Finops.Backend.Identidade.PerfilHandler>();
 builder.Services.AddSingleton<Finops.Backend.Admin.AdminRepositorio>();
+builder.Services.AddSingleton<Finops.Backend.Contas.ContasRepositorio>();
 
 // ── Visão Geral ──
 builder.Services.AddMemoryCache();

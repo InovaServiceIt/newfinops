@@ -10,6 +10,8 @@ export interface Cliente {
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string | null;
+  /** Contas de cloud ativas (só na listagem). */
+  contasAtivas?: number | null;
 }
 
 export interface ClienteEntrada {
