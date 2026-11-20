@@ -18,6 +18,7 @@ builder.Services.AddSingleton<WorkerDb>();
 builder.Services.AddSingleton<ParametroRepositorio>();
 builder.Services.AddSingleton<AgendaRepositorio>();
 builder.Services.AddSingleton<FilaRepositorio>();
+builder.Services.AddSingleton<ImportadorRepositorio>();
 
 builder.Services.AddQuartz(q =>
 {
@@ -33,6 +34,14 @@ builder.Services.AddQuartz(q =>
         .ForJob(SincronizarAgendaJob.Chave)
         .StartNow()
         .WithSimpleSchedule(s => s.WithIntervalInSeconds(Parametros.SincronizarAgendaSegPadrao).RepeatForever()));
+
+    // Importador: COLETADO → IMPORTANDO → IMPORTADO (custo_fato/previsão/crédito).
+    q.AddJob<ImportarColetasJob>(j => j.WithIdentity(ImportarColetasJob.Chave));
+    q.AddTrigger(t => t
+        .WithIdentity(ImportarColetasJob.Gatilho)
+        .ForJob(ImportarColetasJob.Chave)
+        .StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInSeconds(ImportadorSql.IntervaloPadrao).RepeatForever()));
 
     q.AddJob<ZeladorJob>(j => j.WithIdentity(ZeladorJob.Chave));
     q.AddTrigger(t => t
