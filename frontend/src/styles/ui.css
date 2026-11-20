@@ -161,3 +161,79 @@
 .ui-alert-success { background: var(--success-soft); color: var(--success); }
 .ui-alert-warning { background: var(--warning-soft); color: var(--warning); }
 .ui-alert-danger  { background: var(--danger-soft);  color: var(--danger); }
+
+/* ── Chave liga/desliga ────────────────────────────────────────────────────── */
+.ui-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.ui-switch[aria-disabled="true"] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.ui-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.ui-switch-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+.ui-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+}
+.ui-switch input:checked + .ui-switch-track {
+  background: var(--accent);
+}
+.ui-switch input:checked + .ui-switch-track::after {
+  transform: translateX(16px);
+  background: var(--text-on-accent);
+}
+.ui-switch input:focus-visible + .ui-switch-track {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── Skeleton (carregando) ─────────────────────────────────────────────────── */
+.ui-skeleton {
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-hover) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: ui-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes ui-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ── Estado vazio ──────────────────────────────────────────────────────────── */
+.ui-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
