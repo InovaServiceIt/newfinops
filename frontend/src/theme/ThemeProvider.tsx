@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { DEFAULT_THEME, THEME_STORAGE_KEY, THEMES, ThemeId, isThemeId } from './themes';
+import { DEFAULT_THEME, THEME_STORAGE_KEY, THEMES, ThemeId, isThemeId, resolveStoredTheme } from './themes';
 
 interface ThemeContextValue {
   theme: ThemeId;
@@ -15,8 +15,9 @@ function readInitialTheme(): ThemeId {
   const fromDom = document.documentElement.getAttribute('data-theme');
   if (isThemeId(fromDom)) return fromDom;
   try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (isThemeId(stored)) return stored;
+    // Ids antigos (skin renomeado) são migrados; o useEffect abaixo regrava o id novo.
+    const stored = resolveStoredTheme(window.localStorage.getItem(THEME_STORAGE_KEY));
+    if (stored) return stored;
   } catch {
     /* localStorage indisponível: usa o padrão */
   }

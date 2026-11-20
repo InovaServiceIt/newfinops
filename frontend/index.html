@@ -6,14 +6,23 @@
     <title>FinOps - Service IT</title>
     <script>
       // Aplica o skin salvo antes do React montar, para a tela não piscar.
-      // Mantenha a lista em sincronia com src/theme/themes.ts.
+      // Mantenha a lista e a regra de migração em sincronia com src/theme/themes.ts.
       (function () {
-        var themes = ['serviceit-light', 'highlander-dark'];
+        var themes = { 'serviceit-light': 'light', 'serviceit-dark': 'dark' };
         try {
           var saved = window.localStorage.getItem('finops.theme');
-          if (themes.indexOf(saved) !== -1) {
-            document.documentElement.setAttribute('data-theme', saved);
+          var theme = null;
+          if (saved && themes.hasOwnProperty(saved)) {
+            theme = saved;
+          } else if (saved) {
+            // Skin renomeado: migra pelo modo ("*-dark" / "*-light") e regrava o id novo.
+            var mode = /-dark$/.test(saved) ? 'dark' : /-light$/.test(saved) ? 'light' : null;
+            for (var id in themes) {
+              if (mode && themes[id] === mode) { theme = id; break; }
+            }
+            if (theme) window.localStorage.setItem('finops.theme', theme);
           }
+          if (theme) document.documentElement.setAttribute('data-theme', theme);
         } catch (e) {
           /* localStorage indisponível: fica o padrão */
         }

@@ -1,9 +1,9 @@
 /*
- * Skin "Highlander Dark": fundo azul-petróleo escuro, superfícies translúcidas (glass),
+ * Skin "Service IT Dark": fundo azul-petróleo escuro, superfícies translúcidas (glass),
  * destaque turquesa/teal, roxo como cor secundária.
  * Equilíbrio 60-30-10: --bg (60%) · --surface/sidebar (30%) · --accent (10%).
  */
-[data-theme="highlander-dark"] {
+[data-theme="serviceit-dark"] {
   color-scheme: dark;
 
   /* Fundo / superfície */

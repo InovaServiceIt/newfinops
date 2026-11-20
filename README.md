@@ -53,7 +53,7 @@ No App Registration, cadastrar o redirect `https://<domínio>/signin-oidc`. Port
 
 ## Tema (skins)
 
-- Tokens em `frontend/src/theme/`: `tokens.css` (neutros) + um arquivo por skin (`serviceit-light.css`, padrão, e `highlander-dark.css`).
+- Tokens em `frontend/src/theme/`: `tokens.css` (neutros) + um arquivo por skin (`serviceit-light.css`, padrão, e `serviceit-dark.css`).
 - Componentes **só** usam `var(--token)`. Forms usam as classes de `src/styles/ui.css` (`ui-btn`, `ui-input`, `ui-badge-*`...).
 - Página de amostras: `/_tokens` (link "Tokens" no rodapé da sidebar).
 - Checks (rodar antes de commitar):

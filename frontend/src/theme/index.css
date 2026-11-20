@@ -1,4 +1,4 @@
 /* Ponto único de entrada do tema: tokens neutros + skins. */
 @import './tokens.css';
 @import './serviceit-light.css';
-@import './highlander-dark.css';
+@import './serviceit-dark.css';
