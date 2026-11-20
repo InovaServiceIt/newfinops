@@ -10,6 +10,7 @@ Novo FinOps da Service IT: **C# (.NET 8) + React (Vite) + Postgres + Coolify**. 
 backend/    API .NET 8 (auth Entra, /api/auth/me, /api/health, /api/health/db) e servidor da SPA
 frontend/   React + Vite + TypeScript (login, casca, skins/tokens, Visão Geral)
 worker/     cloudvista-worker: .NET 8 + Quartz.NET (agenda e fila no Postgres), Dockerfile próprio
+coletor/    cloudvista-collector: Python 3.12, consome a fila, decifra a credencial, testa e coleta (OCI via coletor do Maurício em coletor/vendor)
 tests/      Testes unitários do backend e do worker (xUnit)
 memories/   Comunicação entre o Claude (chat) e o VSClaude
 Dockerfile  Build multi-stage: frontend → wwwroot do backend, porta 5000
@@ -96,6 +97,14 @@ npm run typecheck
 - Lê `job_agenda` (cron do Quartz + fuso) e enfileira `job_execucao`; o coletor consome a fila com `FOR UPDATE SKIP LOCKED`. Sem broker, sem HTTP.
 - Zelador a cada minuto: jobs `EXECUTANDO` sem heartbeat além de `fila.timeout_execucao_min` voltam para `PENDENTE` (até `fila.max_tentativas`) ou viram `ERRO`.
 - Coolify: build context = raiz do repositório, Dockerfile = `worker/Dockerfile`, sem porta/domínio. Variáveis: `ConnectionStrings__CloudVista` (usuário `svc_cv_worker`), `DOTNET_ENVIRONMENT=Production`, `TZ=America/Sao_Paulo`.
+
+## Coletor (`cloudvista-collector`)
+
+- Python 3.12 (`coletor/`). Pega 1 job `PENDENTE` por vez (`FOR UPDATE SKIP LOCKED`), mantém heartbeat, decifra a credencial (mesmo contrato do cofre) e:
+  - `TESTE_CREDENCIAL` (OCI/AWS/Azure/GCP): chamada mínima de leitura → credencial `ATIVA` ou `FALHA_TESTE`;
+  - `COLETA_*` (OCI): roda o coletor do Maurício (`coletor/vendor/baseline_oci`, não editado) com config em memória e grava `coleta_bruta` (JSON gzip).
+- Coolify: build context = raiz, Dockerfile = `coletor/Dockerfile`, sem porta. Variáveis: `CV_DB_URL` (`svc_cv_collector`, `sslmode=require`), `CV_MASTER_KEY_V{n}`, `CV_MASTER_KEY_ATUAL`.
+- Testes: `cd coletor && pip install -r requirements-dev.txt && pytest`.
 
 ## Regras
 

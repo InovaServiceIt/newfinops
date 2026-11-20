@@ -1,0 +1,8 @@
+# Lido pelo BuildKit para coletor/Dockerfile (contexto = raiz do repositório).
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+coletor/tests
+frontend/node_modules
+**/bin
+**/obj

@@ -1,0 +1,8 @@
+# cloudvista-collector — dependências fixadas (Python 3.12).
+oci==2.192.0
+psycopg[binary]==3.3.9
+cryptography==50.0.2
+boto3==1.44.7
+azure-identity==1.27.0
+google-auth==2.62.2
+requests==2.34.2
