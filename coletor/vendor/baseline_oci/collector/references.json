@@ -1,0 +1,807 @@
+{
+  "_comment": "Manifesto de PROVENIÊNCIA. Mantém referências de custo/specs como DADOS, não como literais espalhados no código. O coletor lê este arquivo e injeta o conteúdo em 'references' no JSON de saída, garantindo rastreabilidade (regra: nada curado/hardcoded na lógica). REVALIDAR periodicamente contra a documentação oficial.",
+  "manifest_version": "1.1.0",
+  "checked_at_utc": "2026-07-14",
+  "must_revalidate": true,
+  "disclaimer": "A não cobrança por operações de control-plane (List/Get) é o modelo de billing do OCI: cobra-se pelos recursos provisionados, não por descrevê-los. Sempre confirmar na página de pricing do serviço antes de tratar como fato.",
+  "cost_model": {
+    "control_plane_read": {
+      "billable": false,
+      "rationale": "Operações List/Get de inventário/configuração não geram cobrança por chamada no OCI.",
+      "source_url": "https://www.oracle.com/cloud/price-list/"
+    },
+    "object_storage_data_requests": {
+      "billable": true,
+      "rationale": "Operações de DADOS do Object Storage (ex.: GetObject/PutObject) contam como 'requests' cobráveis. O coletor NÃO as utiliza: usa apenas metadata (namespace, list_buckets, get_bucket).",
+      "source_url": "https://www.oracle.com/cloud/price-list/",
+      "source_note": "Confirmar a seção Object Storage da price list oficial."
+    }
+  },
+  "monitoring": {
+    "decision": "EXCLUÍDO do baseline para garantir custo zero absoluto.",
+    "ingestion_oci_namespaces_billable": false,
+    "retrieval_billable": true,
+    "retrieval_unit": "analyzed metric data point (1 por minuto por metric stream em query de retrieval)",
+    "rationale": "A ingestão de métricas em namespaces OCI (ex.: oci_computeagent) é gratuita, mas o RETRIEVAL via summarize_metrics_data é cobrado. Coletar utilização violaria a regra de custo zero.",
+    "source_url": "https://www.oracle.com/cloud/cloud-native/monitoring/faq/",
+    "phase_2_optin": "Módulo de utilização poderá ser adicionado como opt-in explícito, desativado por padrão, com aviso de custo."
+  },
+  "shapes": {
+    "source": "oci.core.ComputeClient.list_shapes",
+    "billable": false,
+    "note": "OCPU e memória de cada shape vêm da própria API (não hardcoded)."
+  },
+  "usage_api": {
+    "decision": "OPT-IN via --cost (desativado por padrão). É a mesma fonte do Cost Analysis do console.",
+    "operation": "RequestSummarizedUsages (POST /20200107/usage, oci.usage_api.UsageapiClient)",
+    "read_only": true,
+    "list_get_exception": "EXCEÇÃO DOCUMENTADA à regra 'só List/Get': é um POST de CONSULTA (query sobre o usage store de billing). Não cria, altera nem remove recursos.",
+    "billable": false,
+    "billable_rationale": "Não há SKU de cobrança associado à chamada; Cost Analysis e seus métodos de consulta estão disponíveis inclusive no Free Tier. Não existe frase oficial 'a API é gratuita' — validação por ausência de SKU na price list + modelo de billing OCI (cobra-se recurso provisionado, não consulta de gestão de custo).",
+    "iam_policy_required": "Allow group <grupo> to read usage-report in tenancy",
+    "iam_policy_source": "https://docs.oracle.com/en-us/iaas/Content/Billing/Concepts/costanalysisoverview.htm",
+    "constraints": {
+      "granularity_daily": "janela > 24h e <= 3 meses por consulta",
+      "granularity_monthly": "janela <= 12 meses por consulta",
+      "history": "até 12 meses de consumo disponíveis no usage store",
+      "latency": "atraso embutido de ~24h; as últimas 24h nunca estão completas",
+      "forecast": "exponential smoothing (BASIC); >=10 dias contínuos de histórico no grão diário; máx. 93 dias (diário) / 12 meses (mensal). CONTRATO DESCOBERTO EM CAMPO (16-07-2026, serviceitoci23, probe A-G): time_forecast_started DEVE ser IGUAL a time_usage_ended (regra revelada pela própria API no 400 da variante F: 'usage end time should be equal to the forecast start time') e o ponto de junção precisa ser ONTEM (T00:00:00Z): com usage_ended=hoje o serviço devolve o 400 ENGANOSO 'date does not have the right precision: hours' (mesmo texto da issue oracle/oci-typescript-sdk#218); com usage_ended=ontem aceita (variante D validada: 47 linhas, 17 projetadas). Coerente com o atraso ~24h do usage store. O coletor usa exatamente a variante validada e degrada para a projeção LINEAR rotulada do relatório se falhar. Probe de diagnóstico: scripts/diagnose_forecast.py (com espera/retry para o rate limit).",
+      "forecast_issue_url": "https://github.com/oracle/oci-typescript-sdk/issues/218",
+      "source_url": "https://docs.oracle.com/en-us/iaas/Content/Billing/Concepts/costanalysisoverview.htm"
+    },
+    "api_reference": "https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/usage-api/usage-summary/request-summarized-usages.html",
+    "throttling": "429 TooManyRequests possível (padrão OCI); o coletor usa oci.retry.DEFAULT_RETRY_STRATEGY (backoff exponencial).",
+    "must_revalidate": true
+  },
+  "price_list_api": {
+    "url": "https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/",
+    "auth_required": false,
+    "billable": false,
+    "note": "API pública de preços de lista. Uso opcional (fase 2) para enriquecer o relatório de custo; não chamada no baseline núcleo."
+  },
+  "operations": [
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "get_tenancy",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_region_subscriptions",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_compartments",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_availability_domains",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_users",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_groups",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_policies",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_instances",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_shapes",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_vcns",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_subnets",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_internet_gateways",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_nat_gateways",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_service_gateways",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_drgs",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_route_tables",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_security_lists",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_network_security_groups",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Block Storage",
+      "client": "BlockstorageClient",
+      "operation": "list_volumes",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Block Storage",
+      "client": "BlockstorageClient",
+      "operation": "list_boot_volumes",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Object Storage",
+      "client": "ObjectStorageClient",
+      "operation": "get_namespace",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Object Storage",
+      "client": "ObjectStorageClient",
+      "operation": "list_buckets",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Object Storage",
+      "client": "ObjectStorageClient",
+      "operation": "get_bucket",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Object Storage",
+      "client": "ObjectStorageClient",
+      "operation": "get_object_lifecycle_policy",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "get_image",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_volume_attachments",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_boot_volume_attachments",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Database",
+      "client": "DatabaseClient",
+      "operation": "list_db_systems",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Database",
+      "client": "DatabaseClient",
+      "operation": "list_cloud_vm_clusters",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Database",
+      "client": "DatabaseClient",
+      "operation": "list_vm_clusters",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Database",
+      "client": "DatabaseClient",
+      "operation": "list_autonomous_databases",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "OKE",
+      "client": "ContainerEngineClient",
+      "operation": "list_clusters",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "OKE",
+      "client": "ContainerEngineClient",
+      "operation": "list_node_pools",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "OKE",
+      "client": "ContainerEngineClient",
+      "operation": "list_virtual_node_pools",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "OKE",
+      "client": "ContainerEngineClient",
+      "operation": "get_node_pool",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Load Balancer",
+      "client": "LoadBalancerClient",
+      "operation": "list_load_balancers",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.46.0: a validade dos certificados LEGADOS embutidos no LB é derivada LOCALMENTE do PEM público que esta mesma chamada retorna (pacote cryptography, dependência do SDK oci). Nenhuma chamada adicional; nenhum acesso à chave privada."
+    },
+    {
+      "service": "Network Load Balancer",
+      "client": "NetworkLoadBalancerClient",
+      "operation": "list_network_load_balancers",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_ip_sec_connections",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_virtual_circuits",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_cpes",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_remote_peering_connections",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_drg_attachments",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "File Storage",
+      "client": "FileStorageClient",
+      "operation": "list_file_systems",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "File Storage",
+      "client": "FileStorageClient",
+      "operation": "list_mount_targets",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Block Storage",
+      "client": "BlockstorageClient",
+      "operation": "list_volume_backups",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Block Storage",
+      "client": "BlockstorageClient",
+      "operation": "list_boot_volume_backups",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "KMS",
+      "client": "KmsVaultClient",
+      "operation": "list_vaults",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "KMS",
+      "client": "KmsManagementClient",
+      "operation": "list_keys",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "Apenas metadados das chaves (nome, algoritmo, proteção) via management endpoint do vault. Nunca usa o crypto endpoint (operações de cifra são cobradas)."
+    },
+    {
+      "service": "Bastion",
+      "client": "BastionClient",
+      "operation": "list_bastions",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Functions",
+      "client": "FunctionsManagementClient",
+      "operation": "list_applications",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Functions",
+      "client": "FunctionsManagementClient",
+      "operation": "list_functions",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "Lista a definição das functions. Invocação (data-plane) é cobrada e NÃO é executada."
+    },
+    {
+      "service": "API Gateway",
+      "client": "GatewayClient",
+      "operation": "list_gateways",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "API Gateway",
+      "client": "DeploymentClient",
+      "operation": "list_deployments",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Container Instances",
+      "client": "ContainerInstanceClient",
+      "operation": "list_container_instances",
+      "plane": "control",
+      "read_only": true,
+      "billable": false
+    },
+    {
+      "service": "Database",
+      "client": "DatabaseClient",
+      "operation": "list_databases",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "Bancos (CDBs) em DB Systems/Exadata. Permite contar quantas bases e, via db_home_id, obter a versão."
+    },
+    {
+      "service": "Database",
+      "client": "DatabaseClient",
+      "operation": "list_db_homes",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "db_version de cada DB Home; é a fonte da versão do banco para DB Systems e Exadata."
+    },
+    {
+      "service": "Container Instances",
+      "client": "ContainerInstanceClient",
+      "operation": "list_containers",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "Imagem (image_url, com tag = versão do código) de cada container. Apenas metadados; não executa nem acessa o runtime."
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_public_ips",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "IPs públicos reservados (scope REGION). Apenas inventário/contagem; o coletor não infere custo de IPv4."
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_vnic_attachments",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "Liga instância -> subnet (via VNIC) para o diagrama de arquitetura. Apenas metadados (subnet_id, instance_id)."
+    },
+    {
+      "service": "IAM (Tagging)",
+      "client": "IdentityClient",
+      "operation": "list_tag_namespaces",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET. include_subcompartments=true no root cobre a tenancy inteira numa chamada."
+    },
+    {
+      "service": "IAM (Tagging)",
+      "client": "IdentityClient",
+      "operation": "list_tags",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por namespace. Traz is_cost_tracking e is_retired de cada tag definida."
+    },
+    {
+      "service": "Budgets",
+      "client": "BudgetClient",
+      "operation": "list_budgets",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET. target_type=ALL inclui budgets de compartment e de cost-tracking tag. O summary já traz actual_spend/forecasted_spend (sem consulta de billing extra). Budgets é feature de Cost Management sem SKU próprio."
+    },
+    {
+      "service": "Budgets",
+      "client": "BudgetClient",
+      "operation": "list_alert_rules",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por budget: thresholds e destinatários dos alertas."
+    },
+    {
+      "service": "Organizations (Tenant Manager)",
+      "client": "tenant_manager_control_plane.SubscriptionClient",
+      "operation": "list_subscriptions",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET no root: subscriptions da tenancy (vigência start/end, payment_model ex. ANNUAL, tier, estado). Policy: 'read organizations-subscriptions in tenancy'. Validado em campo (16-07-2026): retorna o contrato Universal Credits (CLOUDCM) e registros de serviço/históricos. ATENÇÃO: end_date de registro V1 pode não refletir renovação — o relatório reporta como está e pede validação, nunca infere a data nova. Fonte: https://docs.oracle.com/en-us/iaas/Content/General/organization/list-subscriptions.htm"
+    },
+    {
+      "service": "OneSubscription",
+      "client": "onesubscription.OrganizationSubscriptionClient",
+      "operation": "list_organization_subscriptions",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET no root: CABEÇALHO do contrato (service_name ex. Universal Credits, type, total_value, moeda, vigência completa, status). Validado em campo (16-07-2026, serviceitoci23): retornou o contrato de 152.176,00 BRL. A rota irmã onesubscription list_subscriptions retornou 404 na mesma tenancy e NÃO é usada. Resource-type de policy a confirmar na doc (validado com admin; Opção A cobre)."
+    },
+    {
+      "service": "OneSubscription",
+      "client": "onesubscription.SubscribedServiceClient",
+      "operation": "list_subscribed_services",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por subscription: LINHAS de crédito do contrato (total_value, used_amount, available_amount, funded_allocation_value, período, status). Peculiaridades validadas em campo: linhas de amendment vêm com total 0 e uso positivo; available pode vir em notação científica (~0). PRIVACIDADE: o summary traz endereços/contatos de billing — o coletor grava APENAS campos financeiros/técnicos (sem PII)."
+    },
+    {
+      "service": "OneSubscription",
+      "client": "onesubscription.RatecardClient",
+      "operation": "list_rate_cards",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET /ratecards por subscription: preços unitários LÍQUIDOS contratados por SKU (net_unit_price), preço de excedente (overage_price), desconto discricionário, tiers e vigência por entrada. Validado em campo (20-07-2026, serviceitoci23): 3.443 entradas em 5 linhas de contrato, BRL, 304 com tiers; o MESMO part_number repete entre vigências/linhas — a seleção do vigente é do GERADOR (data da coleta + time_start mais recente). ACHADO de campo: a relação overage/net VARIA POR SKU (2.408 com overage=net, 448 com overage=lista, 396 outras) — nunca generalizar. CLI: 'oci onesubscription ratecard rate-card list'. O coletor grava apenas preço/produto/vigência."
+    },
+    {
+      "service": "Networking (private IPs)",
+      "client": "core.VirtualNetworkClient",
+      "operation": "list_private_ips (por subnet_id)",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET /privateIps filtrado por subnet (1.45.0): um list leve por subnet já coletada. A correlação IP → vNIC → instância/LB é feita OFFLINE pelo gerador com os attachments já coletados. Coberto pela virtual-network-family (inspect/read); falhas agregadas em erro não-fatal único com amostra."
+    },
+    {
+      "service": "Certificates",
+      "client": "certificates_management.CertificatesManagementClient",
+      "operation": "list_certificates (por compartment)",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET /certificates (1.45.0): certificados gerenciados com VALIDADE (current_version_summary.validity, validado no SDK 2.182.0), tipo e estado. O serviço Certificates da OCI não tem cobrança por certificado gerenciado/list. Resource-type de policy (leaf-certificate-family/certificate-authority-family) a confirmar na doc; na dúvida, a Opção A cobre. Falha é não-fatal (escopo security.certificates)."
+    },
+    {
+      "service": "Object Storage (cost reports oficiais)",
+      "client": "object_storage.ObjectStorageClient",
+      "operation": "list_objects + get_object (namespace bling, bucket = tenancy OCID)",
+      "plane": "data",
+      "read_only": true,
+      "billable": false,
+      "note": "Leitura dos cost reports oficiais (FOCUS + proprietário) do bucket HOSPEDADO PELA ORACLE. ANÁLISE DE CUSTO ZERO: no modelo de cobrança do Object Storage da OCI, armazenamento/requests/egress são faturados na tenancy DONA do bucket (a da Oracle); a OCI não tem 'requester pays'. Download típico < 1 MB por coleta. PRÉ-REQUISITO: policy no root 'define tenancy usage-report as <OCID fixo da doc oficial> / endorse group <grupo> to read objects in tenancy usage-report' — criada pelo admin (IAM é gratuito), nunca pelo coletor. Validado em campo (20-07-2026, serviceitoci23): FOCUS Reports/AAAA/MM/DD com 4-5 arquivos/dia de 10-95KB e ATRASO de 9 dias na última partição (doc fala ~24h — usar a ÚLTIMA disponível e declarar o atraso); reports/cost-csv com IDs sequenciais (~6h de uso por arquivo). Usage reports ANTIGOS deprecados em 31/01/2025 — não usar. Fonte: https://docs.oracle.com/en-us/iaas/Content/Billing/Concepts/costusagereportsoverview.htm"
+    },
+    {
+      "service": "OS Management Hub",
+      "client": "os_management_hub.ManagedInstanceClient",
+      "operation": "list_managed_instances",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por compartment: instâncias com agente OSMH registrado. Usado para resolver o S.O. REAL de instâncias com imagem custom/exportada (metadado de imagem é declarativo). Tenancy sem OSMH: primeiro erro encerra a varredura da região (sem ruído). O coletor só LÊ — a adoção do OSMH é decisão prévia do cliente."
+    },
+    {
+      "service": "OS Management Hub",
+      "client": "os_management_hub.ManagedInstanceClient",
+      "operation": "get_managed_instance",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por managed instance (OCID = o da própria instância de compute): os_name/os_version/os_kernel_version verificados pelo agente, status e último check-in. Chamado apenas para managed instances que casam com instâncias coletadas."
+    },
+    {
+      "service": "Resource Scheduler",
+      "client": "resource_scheduler.ScheduleClient",
+      "operation": "list_schedules",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por compartment: agendas nativas de start/stop (ação, recorrência cron/ICS, próxima/última execução com status, alvos por OCID ou filtro). O serviço de agendamento não tem SKU próprio (cobram os recursos, não a agenda). LIMITE: automações fora do serviço nativo (Functions com cron, scripts, terceiros) não são detectáveis por API. Resource-type de policy a confirmar na doc; Opção A cobre."
+    },
+    {
+      "service": "Object Storage",
+      "client": "ObjectStorageClient",
+      "operation": "list_replication_policies",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por bucket, chamado APENAS quando replication_enabled=true (raro): destino da replicação cross-region (região/bucket), status e último sync. Metadata de control-plane; nunca lê objetos."
+    },
+    {
+      "service": "Block Storage",
+      "client": "BlockstorageClient",
+      "operation": "list_volume_backup_policies",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET. Sem compartment_id retorna as políticas Oracle-defined (bronze/silver/gold); com compartment_id, as user-defined. Retenção em schedules[].retention_seconds."
+    },
+    {
+      "service": "Block Storage",
+      "client": "BlockstorageClient",
+      "operation": "get_volume_backup_policy_asset_assignment",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por volume/boot volume (asset_id): política de backup ATRIBUÍDA ao recurso. Resposta vazia = sem política (informação válida). Uma chamada por volume; falhas por asset são agregadas num único erro não-fatal."
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_compute_capacity_reservations",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por compartment: capacity reservations com reserved_instance_count × used_instance_count no próprio summary. A LISTAGEM é custo zero; a RESERVA em si é que fatura (capacidade reservada não usada é cobrada a 85% do preço da instância — base do achado FinOps de reserva ociosa). Fonte: https://docs.oracle.com/en-us/iaas/Content/Compute/Tasks/reserve-capacity.htm"
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "get_compute_capacity_reservation",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "GET por reserva: instance_reservation_configs (shape, fault domain, reserved_count × used_count por config). Chamado apenas para as reservas listadas (raras por tenancy)."
+    },
+    {
+      "service": "Usage API",
+      "client": "UsageapiClient",
+      "operation": "request_summarized_usages",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "optin_flag": "--cost",
+      "note": "POST de CONSULTA (exceção documentada ao 'só List/Get'; ver usage_api). Mesma fonte do Cost Analysis. Exige 'read usage-report in tenancy'."
+    },
+    {
+      "service": "IAM",
+      "client": "IdentityClient",
+      "operation": "list_cost_tracking_tags",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "optin_flag": "--cost",
+      "note": "Descobre as cost-tracking tags da tenancy para o agrupamento de custos por tag."
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_network_security_group_security_rules",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: regras de cada NSG (2 Lists por NSG; gratuitas)."
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_network_security_group_vnics",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: VNICs associadas a cada NSG."
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_ip_sec_connection_tunnels",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: status e BGP por túnel de cada conexão IPSec."
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_local_peering_gateways",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: LPGs por compartment."
+    },
+    {
+      "service": "Networking",
+      "client": "VirtualNetworkClient",
+      "operation": "list_dhcp_options",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: DHCP options por compartment."
+    },
+    {
+      "service": "Compute",
+      "client": "ComputeClient",
+      "operation": "list_images",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: catálogo de imagens da região (root; campos enxutos os/versão) p/ indício de ciclo de vida de S.O."
+    },
+    {
+      "service": "Identity",
+      "client": "IdentityClient",
+      "operation": "list_tag_defaults",
+      "plane": "control",
+      "read_only": true,
+      "billable": false,
+      "note": "1.47.0: tag defaults do root (fato p/ o card de CreatedBy)."
+    }
+  ],
+  "focus_reports": {
+    "decision": "NÃO baixados pelo coletor (GetObject cross-tenancy = data-plane, fora do escopo de metadados). O produto ORIENTA o acesso e complementa o dataset (ResourceName nulo no FOCUS oficial vs nomes cruzados do inventário no nosso relatório).",
+    "native_support": "OCI publica cost reports em FOCUS 1.0 desde jun/2024; CSVs a cada ~6h, recurso x hora, retenção 1 ano, pasta FOCUS/aaaa/mm/dd no bucket de cost reports (tenancy da Oracle).",
+    "iam_policy_required": "define tenancy usage-report as ocid1.tenancy.oc1..aaaaaaaaned4fkpkisbwjlr56u7cj63lf3wffbilvqknstgtvzub7vhqkggq + endorse group <grupo> to read objects in tenancy usage-report",
+    "source_url": "https://docs.oracle.com/en-us/iaas/Content/Billing/Concepts/costusagereportsoverview.htm",
+    "notes": "Dados podem atrasar até 24h; correções chegam como novas linhas; ResourceName é nulo por design no FOCUS da Oracle.",
+    "future_candidate": "flag opt-in de download (--focus-fetch) só com decisão explícita: revalidar cobrança de requests no bucket da Oracle e a postura read-only do produto.",
+    "must_revalidate": true
+  }
+}

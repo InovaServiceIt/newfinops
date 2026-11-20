@@ -1,0 +1,4 @@
+# Coletor Baseline OCI — dependências mínimas.
+# No OCI Cloud Shell o SDK 'oci' já vem pré-instalado; este arquivo cobre
+# execução em máquina local (config file / instance principal).
+oci>=2.126.0
