@@ -16,6 +16,24 @@ public static class AdminSql
     public const string AtualizarCliente = $"UPDATE cliente SET nome = @nome, apelido = @apelido, documento = @documento WHERE id = @id RETURNING {ColunasCliente}";
     public const string AtivarCliente = $"UPDATE cliente SET ativo = @ativo WHERE id = @id RETURNING {ColunasCliente}";
     public const string ClientesAtivosEntre = "SELECT id FROM cliente WHERE ativo AND id = ANY(@ids)";
+    /// <summary>
+    /// Usuários CLIENTE ativos para os quais @cliente_id é o único cliente ativo vinculado
+    /// (ficariam sem acesso a dados se o cliente fosse desativado).
+    /// </summary>
+    public const string ImpactoDesativacaoCliente = @"
+SELECT u.id, u.nome, u.email
+FROM usuario u
+JOIN usuario_cliente uc ON uc.usuario_id = u.id AND uc.cliente_id = @cliente_id
+WHERE u.ativo
+  AND u.perfil = @perfil_cliente
+  AND NOT EXISTS (
+      SELECT 1
+      FROM usuario_cliente uc2
+      JOIN cliente c2 ON c2.id = uc2.cliente_id
+      WHERE uc2.usuario_id = u.id
+        AND c2.ativo
+        AND c2.id <> @cliente_id)
+ORDER BY u.nome, u.email";
 
     public const string ListarUsuarios = "SELECT id, email, nome, perfil, ativo, ultimo_login_em FROM usuario ORDER BY nome, email";
     public const string ListarVinculos = @"
@@ -107,6 +125,20 @@ public sealed class AdminRepositorio
             throw ErroNegocioException.Validacao("Dados do cliente inválidos.");
         }
     }
+
+    /// <summary>Usuários CLIENTE que ficariam sem nenhum cliente ativo se este cliente fosse desativado.</summary>
+    public Task<List<UsuarioAfetado>> ImpactoDesativacaoClienteAsync(UsuarioAtual ator, long clienteId, CancellationToken ct) =>
+        _db.ExecutarComContextoAsync(ator, async (conn, tx) =>
+        {
+            var lista = new List<UsuarioAfetado>();
+            await using var cmd = Comando(conn, tx, AdminSql.ImpactoDesativacaoCliente);
+            cmd.Parameters.Add(new NpgsqlParameter("cliente_id", NpgsqlDbType.Bigint) { Value = clienteId });
+            cmd.Parameters.Add(new NpgsqlParameter("perfil_cliente", NpgsqlDbType.Varchar) { Value = Perfis.Cliente });
+            await using var r = await cmd.ExecuteReaderAsync(ct);
+            while (await r.ReadAsync(ct))
+                lista.Add(new UsuarioAfetado(r.GetInt64(0), r.IsDBNull(1) ? "" : r.GetString(1), r.GetString(2)));
+            return lista;
+        }, ct);
 
     // ── Usuários ─────────────────────────────────────────────────────────────
 

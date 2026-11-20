@@ -32,8 +32,9 @@ public sealed class FinopsDb : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            // Connection string inválida: não derruba a aplicação. Detalhe só no log do servidor.
-            logger.LogError(ex, "ConnectionStrings:{Name} inválida. A aplicação segue sem acesso ao banco.", ConnectionStringName);
+            // Connection string inválida: não derruba a aplicação. Nunca logar a exceção:
+            // a de parse traz trechos da connection string (senha).
+            LogSeguro.ConnectionStringInvalida(logger, ConnectionStringName, ex, "A aplicação segue sem acesso ao banco.");
         }
     }
 

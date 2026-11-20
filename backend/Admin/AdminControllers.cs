@@ -79,6 +79,11 @@ public sealed class AdminClientesController(AdminRepositorio repo, UsuarioAtualS
     [HttpPatch("{id:long}/ativo")]
     public async Task<IActionResult> AlterarAtivo(long id, [FromBody] AtivoEntrada entrada, CancellationToken ct) =>
         Ok(await Repo.AlterarAtivoClienteAsync(await AtorAsync(ct), id, entrada.Ativo, ct));
+
+    /// <summary>Usuários CLIENTE que ficariam sem acesso a dados se o cliente fosse desativado (só aviso; a desativação é permitida).</summary>
+    [HttpGet("{id:long}/impacto-desativacao")]
+    public async Task<IActionResult> ImpactoDesativacao(long id, CancellationToken ct) =>
+        Ok(new { usuariosAfetados = await Repo.ImpactoDesativacaoClienteAsync(await AtorAsync(ct), id, ct) });
 }
 
 [Route("api/admin/usuarios")]

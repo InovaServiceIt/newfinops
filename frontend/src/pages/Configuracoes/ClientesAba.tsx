@@ -3,8 +3,8 @@ import { Pencil, Plus, Search } from 'lucide-react';
 import Modal, { Confirmar } from '../../components/common/Modal';
 import { mensagemDeErro } from '../../services/api';
 import {
-  alterarAtivoCliente, atualizarCliente, criarCliente, listarClientes,
-  type Cliente, type ClienteEntrada,
+  alterarAtivoCliente, atualizarCliente, criarCliente, impactoDesativacaoCliente, listarClientes,
+  type Cliente, type ClienteEntrada, type UsuarioAfetado,
 } from '../../services/admin';
 
 const VAZIO: ClienteEntrada = { nome: '', apelido: '', documento: null };
@@ -32,6 +32,9 @@ const ClientesAba: React.FC = () => {
 
   const [confirmando, setConfirmando] = useState<Cliente | null>(null);
   const [erroConfirmar, setErroConfirmar] = useState<string | null>(null);
+  /** Usuários CLIENTE que ficariam sem acesso (null = carregando ou não se aplica). */
+  const [afetados, setAfetados] = useState<UsuarioAfetado[] | null>(null);
+  const [carregandoImpacto, setCarregandoImpacto] = useState(false);
 
   const carregar = useCallback(() => {
     setErroLista(null);
@@ -70,6 +73,22 @@ const ClientesAba: React.FC = () => {
       setErroForm(mensagemDeErro(err));
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const pedirConfirmacao = async (c: Cliente) => {
+    setErroConfirmar(null);
+    setAfetados(null);
+    setConfirmando(c);
+    if (!c.ativo) return;
+    setCarregandoImpacto(true);
+    try {
+      const r = await impactoDesativacaoCliente(c.id);
+      setAfetados(r.usuariosAfetados);
+    } catch (err) {
+      setErroConfirmar(mensagemDeErro(err, 'Não foi possível verificar os usuários afetados.'));
+    } finally {
+      setCarregandoImpacto(false);
     }
   };
 
@@ -128,7 +147,7 @@ const ClientesAba: React.FC = () => {
                     <button type="button" className="ui-btn ui-btn-ghost" onClick={() => abrir(c)} aria-label={`Editar ${c.nome}`}>
                       <Pencil size={14} /> Editar
                     </button>
-                    <button type="button" className="ui-btn ui-btn-ghost" onClick={() => { setErroConfirmar(null); setConfirmando(c); }}>
+                    <button type="button" className="ui-btn ui-btn-ghost" onClick={() => pedirConfirmacao(c)}>
                       {c.ativo ? 'Desativar' : 'Ativar'}
                     </button>
                   </td>
@@ -177,12 +196,23 @@ const ClientesAba: React.FC = () => {
       <Confirmar
         aberto={confirmando !== null}
         titulo={confirmando?.ativo ? 'Desativar cliente' : 'Ativar cliente'}
-        mensagem={confirmando?.ativo
-          ? <>Desativar <strong>{confirmando?.nome}</strong>? Ele deixa de aparecer para os usuários vinculados.</>
-          : <>Reativar <strong>{confirmando?.nome}</strong>?</>}
+        mensagem={confirmando?.ativo ? (
+          <>
+            Desativar <strong>{confirmando?.nome}</strong>? Ele deixa de aparecer para os usuários vinculados.
+            {carregandoImpacto && <span className="cfg-impacto-carregando">Verificando usuários afetados...</span>}
+            {afetados && afetados.length > 0 && (
+              <span className="ui-alert ui-alert-warning cfg-impacto" role="alert">
+                <span>
+                  <strong>Atenção:</strong> {afetados.length} usuário(s) do perfil Cliente ficarão sem acesso a dados
+                  (este é o único cliente deles): {afetados.map((u) => `${u.nome} (${u.email})`).join(', ')}.
+                </span>
+              </span>
+            )}
+          </>
+        ) : <>Reativar <strong>{confirmando?.nome}</strong>?</>}
         textoConfirmar={confirmando?.ativo ? 'Desativar' : 'Ativar'}
         perigo={confirmando?.ativo}
-        ocupado={salvando}
+        ocupado={salvando || carregandoImpacto}
         erro={erroConfirmar}
         onConfirmar={confirmarAtivo}
         onCancelar={() => setConfirmando(null)}

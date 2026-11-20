@@ -43,7 +43,8 @@ public sealed class CloudVistaDb : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "ConnectionStrings:{Name} inválida. Endpoints do CloudVista responderão 503.", ConnectionStringName);
+            // Nunca logar a exceção: a de parse traz trechos da connection string (senha).
+            LogSeguro.ConnectionStringInvalida(logger, ConnectionStringName, ex, "Endpoints do CloudVista responderão 503.");
         }
     }
 

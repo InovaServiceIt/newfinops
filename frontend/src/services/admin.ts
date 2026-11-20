@@ -42,6 +42,16 @@ export const atualizarCliente = (id: number, c: ClienteEntrada) => apiSend<Clien
 export const alterarAtivoCliente = (id: number, ativo: boolean) =>
   apiSend<Cliente>('PATCH', `/api/admin/clientes/${id}/ativo`, { ativo });
 
+export interface UsuarioAfetado {
+  id: number;
+  nome: string;
+  email: string;
+}
+
+/** Usuários CLIENTE que ficariam sem nenhum cliente ativo se o cliente fosse desativado. */
+export const impactoDesativacaoCliente = (id: number) =>
+  apiGet<{ usuariosAfetados: UsuarioAfetado[] }>(`/api/admin/clientes/${id}/impacto-desativacao`);
+
 export const listarUsuarios = () => apiGet<Usuario[]>('/api/admin/usuarios');
 export const criarUsuario = (u: UsuarioEntrada) => apiSend<Usuario>('POST', '/api/admin/usuarios', u);
 export const atualizarUsuario = (id: number, u: UsuarioEntrada) =>

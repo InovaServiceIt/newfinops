@@ -22,6 +22,7 @@ public sealed record UsuarioAlteracao(string? Nome, string? Perfil, long[]? Clie
 
 public sealed record ClienteSaida(long Id, string Nome, string Apelido, string? Documento, bool Ativo, DateTimeOffset CriadoEm, DateTimeOffset? AtualizadoEm);
 public sealed record ClienteResumo(long Id, string Nome, string Apelido);
+public sealed record UsuarioAfetado(long Id, string Nome, string Email);
 public sealed record UsuarioSaida(long Id, string Email, string Nome, string Perfil, bool Ativo, DateTimeOffset? UltimoLoginEm, IReadOnlyList<ClienteResumo> Clientes);
 
 /// <summary>Dados de cliente já validados e normalizados.</summary>
