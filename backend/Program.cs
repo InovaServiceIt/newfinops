@@ -74,6 +74,12 @@ builder.Services.AddSwaggerGen();
 // ── Banco finopsdatabase: somente leitura (ConnectionStrings:FinopsDb, opcional) ──
 builder.Services.AddSingleton<FinopsDb>();
 
+// ── Visão Geral ──
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<Finops.Backend.VisaoGeral.VisaoGeralRepositorio>();
+builder.Services.AddSingleton<Finops.Backend.VisaoGeral.VisaoGeralServico>();
+
 // ── CORS: origens via configuração (ex.: Cors__AllowedOrigins="https://a,https://b") ──
 var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

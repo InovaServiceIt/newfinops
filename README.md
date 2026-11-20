@@ -8,7 +8,8 @@ Novo FinOps da Service IT: **C# (.NET 8) + React (Vite) + Postgres + Coolify**. 
 
 ```
 backend/    API .NET 8 (auth Entra, /api/auth/me, /api/health, /api/health/db) e servidor da SPA
-frontend/   React + Vite + TypeScript (login, casca, skins/tokens)
+frontend/   React + Vite + TypeScript (login, casca, skins/tokens, Visão Geral)
+tests/      Testes unitários do backend (xUnit)
 memories/   Comunicação entre o Claude (chat) e o VSClaude
 Dockerfile  Build multi-stage: frontend → wwwroot do backend, porta 5000
 ```
@@ -32,6 +33,12 @@ npm run dev
 ```
 
 Para testar o fluxo completo de SSO, o mais simples é gerar o build do frontend e deixar o .NET servir tudo: `npm run build` e copiar `frontend/dist` para `backend/wwwroot` (é o que o `Dockerfile` faz).
+
+## Testes
+
+```bash
+dotnet test tests/Finops.Backend.Tests   # regras de datas, projeções e montagem da Visão Geral (sem banco)
+```
 
 ## Docker
 
