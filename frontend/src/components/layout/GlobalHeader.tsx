@@ -32,7 +32,7 @@ const GlobalHeader: React.FC = () => {
         </div>
         <div className="header-title-group">
           <span className="header-brand">FINOPS</span>
-          <span className="header-tagline">— Xurupita. Operações mais inteligentes.</span>
+          <span className="header-tagline">Custos multicloud sob controle. Decisões mais inteligentes.</span>
         </div>
       </div>
 
