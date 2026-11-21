@@ -6,7 +6,7 @@ export interface ContagemItem { chave: string; total: number }
 export interface CompartimentoOpcao { ocid: string; caminho: string }
 export interface ProvenienciaConta { contaId: number; contaNome: string | null; vistoEm: string | null; job: number | null }
 
-export type Sinal = 'volumes_soltos' | 'ips_sem_uso' | 'instancias_paradas' | 'backups_antigos' | 'certificados_vencendo' | 'sem_tag_defined';
+export type Sinal = 'volumes_soltos' | 'ips_sem_uso' | 'instancias_paradas' | 'backups_antigos' | 'certificados_vencendo' | 'sem_tag';
 
 export interface ResumoInventario {
   totalAtivos: number;
@@ -145,7 +145,7 @@ export const SINAIS: { chave: Sinal; rotulo: string; ajuda: string }[] = [
   { chave: 'instancias_paradas', rotulo: 'Instâncias paradas', ajuda: 'Instâncias em STOPPED (o boot volume continua cobrando)' },
   { chave: 'backups_antigos', rotulo: 'Backups > 90 dias', ajuda: 'Backups de volume criados há mais de 90 dias' },
   { chave: 'certificados_vencendo', rotulo: 'Certificados vencendo', ajuda: 'Validade em até 30 dias (ou já vencidos)' },
-  { chave: 'sem_tag_defined', rotulo: 'Sem tag defined', ajuda: 'Recursos sem nenhuma defined tag' },
+  { chave: 'sem_tag', rotulo: 'Sem tag (exceto automáticas)', ajuda: 'Sem nenhuma tag defined ou freeform, desconsiderando Oracle-Tags CreatedBy/CreatedOn (mesma regra da Governança)' },
 ];
 
 /** Tags achatadas: freeform "chave=valor" e defined "ns.chave=valor". */

@@ -47,7 +47,8 @@ WHERE j.criado_em >= @de AND j.criado_em < @ate
 SELECT j.id, j.tipo_job, c.nome, cc.nome, cc.provedor, j.origem, u.nome, j.status, j.tentativas,
        j.criado_em, j.iniciado_em, j.finalizado_em,
        CASE WHEN j.iniciado_em IS NULL THEN NULL
-            ELSE EXTRACT(EPOCH FROM (COALESCE(j.finalizado_em, now()) - j.iniciado_em))::float8 END,
+            -- Duração da coleta = tempo do coletor (coletado_em): reimportar não a altera.
+            ELSE EXTRACT(EPOCH FROM (COALESCE(j.coletado_em, j.finalizado_em, now()) - j.iniciado_em))::float8 END,
        j.erro, j.resumo::text, j.coletor_versao,
        (j.status IN ('IMPORTADO', 'ERRO') AND j.coletado_em IS NOT NULL
         AND j.tipo_job IN ('COLETA_COMPLETA', 'COLETA_CUSTO', 'COLETA_INVENTARIO')) AS pode_reimportar

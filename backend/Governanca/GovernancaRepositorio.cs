@@ -35,9 +35,9 @@ pares AS (
     SELECT b.cloud_conta_id, b.chave, d.key || '.' || k.key AS tag, 'DEFINED' AS origem, k.value #>> '{}' AS valor
     FROM base b
     CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(b.tags->'defined') = 'object' THEN b.tags->'defined' ELSE '{}'::jsonb END) AS d
-    CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(d.value) = 'object' THEN d.value ELSE '{}'::jsonb END) AS k
+    CROSS JOIN LATERAL jsonb_each(" + TagsSql.Namespace + @") AS k
     WHERE @automaticas
-       OR NOT ((d.key = 'Oracle-Tags' OR d.key LIKE '%-Oracle-Tags') AND k.key IN ('CreatedBy', 'CreatedOn'))
+       OR NOT (" + TagsSql.Automatica + @")
     UNION ALL
     SELECT b.cloud_conta_id, b.chave, f.key AS tag, 'FREEFORM' AS origem, f.value #>> '{}' AS valor
     FROM base b

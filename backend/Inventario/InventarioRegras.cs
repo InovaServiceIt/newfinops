@@ -49,7 +49,8 @@ public static class InventarioRegras
         ["instancias_paradas"] = "r.tipo = 'compute.instances' AND r.estado = 'STOPPED'",
         ["backups_antigos"] = "r.tipo IN ('block_storage.volume_backups', 'block_storage.boot_volume_backups') AND r.criado_em_cloud < now() - interval '90 days'",
         ["certificados_vencendo"] = "r.tipo = 'security.certificates' AND (CASE WHEN r.atributos->>'not_after' ~ '^\\d{4}-\\d{2}-\\d{2}' THEN CAST(left(r.atributos->>'not_after', 10) AS date) END) <= current_date + 30",
-        ["sem_tag_defined"] = "COALESCE(r.tags->'defined', '{}'::jsonb) = '{}'::jsonb",
+        // Mesma regra da Governança ("sem nenhuma tag", desconsiderando automáticas): TagsSql.
+        ["sem_tag"] = "NOT " + TagsSql.TemTagNaoAutomaticaR,
     };
 
     /// <summary>Ordenação: chave → expressão CONSTANTE.</summary>
