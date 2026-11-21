@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Finops.Backend.Admin;
 using Finops.Backend.Inventario;
@@ -15,16 +16,18 @@ public sealed record ConsultaExplorador(long ClienteId, long? ContaId, string Gr
 }
 
 public sealed record GrupoValor(string Chave, decimal Valor);
-public sealed record PontoSerie(string Periodo, IReadOnlyList<GrupoValor> Grupos, decimal Outros);
+/// <summary>EmApuracao: perfil CLIENTE sem fator vigente no período (sem número).</summary>
+public sealed record PontoSerie(string Periodo, IReadOnlyList<GrupoValor> Grupos, decimal Outros, bool EmApuracao = false);
 public sealed record LinhaTabela(string Chave, string Rotulo, decimal Total, decimal Pct, decimal? VariacaoPct,
     IReadOnlyList<decimal> Serie, long? ContaId);
 public sealed record ProvenienciaCusto(long ContaId, string? ContaNome, DateTimeOffset? AtualizadoEm, long? Job);
 
 public sealed record RespostaExplorador(
     string Granularidade, string Dimensao, string De, string Ate, string? Moeda, IReadOnlyList<string> Moedas,
-    bool ComFator, bool FatorDisponivel, IReadOnlyList<string> Grupos, IReadOnlyList<PontoSerie> Serie,
-    IReadOnlyList<LinhaTabela> Tabela, bool TabelaTruncada, decimal Total, decimal? TotalPeriodoAnterior, decimal? Creditos,
-    IReadOnlyList<ProvenienciaCusto> Proveniencia, bool Vazio);
+    bool ComFator, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? FatorDisponivel,
+    IReadOnlyList<string> Grupos, IReadOnlyList<PontoSerie> Serie,
+    IReadOnlyList<LinhaTabela> Tabela, bool TabelaTruncada, decimal? Total, decimal? TotalPeriodoAnterior, decimal? Creditos,
+    IReadOnlyList<ProvenienciaCusto> Proveniencia, bool Vazio, bool EmApuracao = false);
 
 /// <summary>Rótulo de chave vindo do inventário (RECURSO: nome; COMPARTIMENTO: caminho) e conta para abrir o painel.</summary>
 public sealed record RotuloChave(string Rotulo, long? ContaId);
@@ -116,8 +119,13 @@ public static partial class ExploradorRegras
     /// Monta série (top N + Outros, somando exatamente o total) e tabela. As linhas já vêm agregadas
     /// do banco (GROUP BY período, chave, moeda) e, se for o caso, com o fator aplicado.
     /// </summary>
+    /// <param name="emApuracao">
+    /// Perfil CLIENTE: período sem fator vigente (as linhas já chegam sem ele). O total que depender de
+    /// algum período em apuração vira nulo; a série marca o período; fatorDisponivel não sai.
+    /// </param>
     public static RespostaExplorador Montar(ConsultaExplorador c, IReadOnlyList<LinhaAgregada> linhas, decimal? creditos,
-        IReadOnlyDictionary<string, RotuloChave> rotulos, bool comFator, bool fatorDisponivel, IReadOnlyList<ProvenienciaCusto> proveniencia)
+        IReadOnlyDictionary<string, RotuloChave> rotulos, bool comFator, bool fatorDisponivel, IReadOnlyList<ProvenienciaCusto> proveniencia,
+        Func<DateOnly, bool>? emApuracao = null)
     {
         var (antDe, antAte) = c.Anterior;
         var atuais = linhas.Where(l => l.Periodo >= c.De && l.Periodo <= c.Ate).ToList();
@@ -137,6 +145,8 @@ public static partial class ExploradorRegras
         {
             var doPeriodo = doMoeda.Where(l => l.Periodo == p).ToList();
             var grupos = top.Select(k => new GrupoValor(k, doPeriodo.Where(l => l.Chave == k).Sum(l => l.Valor))).ToList();
+            if (emApuracao?.Invoke(p) == true)
+                return new PontoSerie(Rotulo(c.Granularidade, p), [], 0m, true);
             return new PontoSerie(Rotulo(c.Granularidade, p), grupos, doPeriodo.Where(l => !topSet.Contains(l.Chave)).Sum(l => l.Valor));
         }).ToList();
 
@@ -153,9 +163,18 @@ public static partial class ExploradorRegras
                 periodos.Select(p => serieChave.GetValueOrDefault((x.Chave, p))).ToList(), rot?.ContaId);
         }).ToList();
 
+        if (emApuracao is null)
+            return new RespostaExplorador(c.Granularidade, c.Dimensao, Rotulo(c.Granularidade, c.De), Rotulo(c.Granularidade, c.Ate),
+                moeda, moedas, comFator, fatorDisponivel, top, serie, tabela, porChave.Count > MaxLinhasTabela, total, totalAnterior,
+                c.Granularidade == "MES" ? creditos : null, proveniencia, doMoeda.Count == 0);
+
+        var atualEmApuracao = periodos.Any(emApuracao);
+        var anteriorEmApuracao = Periodos(c.Granularidade, antDe, antAte).Any(emApuracao);
         return new RespostaExplorador(c.Granularidade, c.Dimensao, Rotulo(c.Granularidade, c.De), Rotulo(c.Granularidade, c.Ate),
-            moeda, moedas, comFator, fatorDisponivel, top, serie, tabela, porChave.Count > MaxLinhasTabela, total, totalAnterior,
-            c.Granularidade == "MES" ? creditos : null, proveniencia, doMoeda.Count == 0);
+            moeda, moedas, true, null, top, serie, tabela, porChave.Count > MaxLinhasTabela,
+            atualEmApuracao ? null : total, anteriorEmApuracao ? null : totalAnterior,
+            c.Granularidade == "MES" && !atualEmApuracao ? creditos : null, proveniencia,
+            doMoeda.Count == 0 && !atualEmApuracao, atualEmApuracao);
     }
 
     public static readonly string[] CabecalhoCsv = ["periodo", "chave", "rotulo", "valor", "moeda", "fator_aplicado"];

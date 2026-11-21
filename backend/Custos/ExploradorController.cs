@@ -50,7 +50,7 @@ public sealed class ExploradorController(ExploradorRepositorio repo, UsuarioAtua
         var u = await UsuarioAsync(ct);
         var c = ExploradorRegras.Validar(clienteId, contaId, granularidade, de, ate, dimensao, filtroChave, tagChave, moeda, comFator, 50);
         var r = await repo.ConsultarAsync(u, c, PodeFator(u.Perfil), VisaoGeralCustos.HojeEmSaoPaulo(relogio), ct);
-        var linhas = ExploradorCsv.Linhas(r);
+        var linhas = ExploradorCsv.Linhas(r, cliente: !PodeFator(u.Perfil));
         var bytes = InventarioRegras.CodificacaoCsv.GetPreamble()
             .Concat(InventarioRegras.CodificacaoCsv.GetBytes(string.Join("\r\n", linhas) + "\r\n")).ToArray();
         return File(bytes, "text/csv; charset=utf-8", $"explorador_{relogio.GetUtcNow():yyyyMMdd_HHmm}.csv");
@@ -59,15 +59,19 @@ public sealed class ExploradorController(ExploradorRepositorio repo, UsuarioAtua
 
 public static class ExploradorCsv
 {
-    public static List<string> Linhas(RespostaExplorador r)
+    /// <summary>CLIENTE: sem a coluna de fator (e os períodos em apuração já vêm sem valor, logo omitidos).</summary>
+    public static List<string> Linhas(RespostaExplorador r, bool cliente = false)
     {
-        var linhas = new List<string> { InventarioRegras.LinhaCsv(ExploradorRegras.CabecalhoCsv) };
+        var cabecalho = cliente ? ExploradorRegras.CabecalhoCsv[..^1] : ExploradorRegras.CabecalhoCsv;
+        var linhas = new List<string> { InventarioRegras.LinhaCsv(cabecalho) };
         var fator = r.ComFator ? "sim" : "não";
         foreach (var t in r.Tabela)
             for (var i = 0; i < r.Serie.Count && i < t.Serie.Count; i++)
                 if (t.Serie[i] != 0)
-                    linhas.Add(InventarioRegras.LinhaCsv([r.Serie[i].Periodo, t.Chave, t.Rotulo,
-                        t.Serie[i].ToString("0.######", CultureInfo.InvariantCulture), r.Moeda, fator]));
+                {
+                    string?[] celulas = [r.Serie[i].Periodo, t.Chave, t.Rotulo, t.Serie[i].ToString("0.######", CultureInfo.InvariantCulture), r.Moeda];
+                    linhas.Add(InventarioRegras.LinhaCsv(cliente ? celulas : [.. celulas, fator]));
+                }
         return linhas;
     }
 }

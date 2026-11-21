@@ -23,11 +23,10 @@ public sealed class VisaoGeralController(CustosRepositorio repo, UsuarioAtualSer
         var hoje = VisaoGeralCustos.HojeEmSaoPaulo(relogio);
         var dados = await repo.CarregarAsync(usuario, clienteId.Value, contaId, hoje, ct);
 
-        // Fator de cobrança: só ADMINISTRADOR e ANALISTA o veem.
-        var podeFator = usuario.Perfil is Perfis.Administrador or Perfis.AnalistaFinOps;
-        if (!podeFator) dados = dados with { Fatores = [] };
-
-        return Ok(VisaoGeralCustos.Montar(clienteId.Value, contaId, hoje, dados, podeFator && comFator));
+        // ADMINISTRADOR/ANALISTA escolhem (toggle). CLIENTE: sempre com fator, aplicado aqui; o fator
+        // e o custo bruto nunca saem na resposta; período sem fator vigente = "em apuração".
+        var cliente = !ExploradorController.PodeFator(usuario.Perfil);
+        return Ok(VisaoGeralCustos.Montar(clienteId.Value, contaId, hoje, dados, comFator, cliente));
     }
 }
 

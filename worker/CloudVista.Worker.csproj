@@ -6,10 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>CloudVista.Worker</RootNamespace>
     <InvariantGlobalization>false</InvariantGlobalization>
+    <DefineConstants>$(DefineConstants);CLOUDVISTA_WORKER</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Finops.Backend.Tests" />
+  </ItemGroup>
+
+  <!-- SQL de tags/política compartilhado com a API (mesma regra; namespace próprio no worker). -->
+  <ItemGroup>
+    <Compile Include="..\backend\Compartilhado\*.cs" LinkBase="Compartilhado" />
   </ItemGroup>
 
   <ItemGroup>

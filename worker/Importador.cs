@@ -58,6 +58,13 @@ FROM unnest(@periodos, @moedas, @valores) AS t(periodo, moeda, valor)
 ON CONFLICT (cloud_conta_id, mes, moeda)
 DO UPDATE SET valor = EXCLUDED.valor, cliente_id = EXCLUDED.cliente_id, job_execucao_id = EXCLUDED.job_execucao_id, atualizado_em = now()";
 
+    /// <summary>Acrescenta um aviso a resumo.importacao.avisos (falha do snapshot não derruba a importação).</summary>
+    public const string AcrescentarAviso = @"
+UPDATE job_execucao
+SET resumo = jsonb_set(COALESCE(resumo, '{}'::jsonb), '{importacao,avisos}',
+                       COALESCE(resumo #> '{importacao,avisos}', '[]'::jsonb) || to_jsonb(CAST(@aviso AS text)), true)
+WHERE id = @job";
+
     public const string Concluir = @"
 UPDATE job_execucao
 SET status = @status, finalizado_em = now(), erro = @erro,
@@ -138,6 +145,44 @@ public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorReposit
         await ConcluirAsync(conn, tx, job.Id, "IMPORTADO", null, resumo, ct);
         await tx.CommitAsync(ct);
         return resumo;
+    }
+
+    // ── Snapshot de conformidade da política de tags (transação própria, depois do commit) ──
+
+    /// <summary>Recalcula tag_conformidade_dia do cliente (dia = data de visto em São Paulo). Sem política ativa: nada.</summary>
+    public async Task<int> SnapshotConformidadeAsync(long clienteId, DateTimeOffset visto, CancellationToken ct)
+    {
+        await using var conn = await db.AbrirAsync(ct);
+        await using var tx = await conn.BeginTransactionAsync(ct);
+        int n;
+        await using (var cmd = new NpgsqlCommand(PoliticaSql.UpsertSnapshot, conn, tx))
+        {
+            cmd.Parameters.Add(new NpgsqlParameter("cliente_id", NpgsqlDbType.Bigint) { Value = clienteId });
+            cmd.Parameters.Add(new NpgsqlParameter("visto", NpgsqlDbType.TimestampTz) { Value = visto.ToUniversalTime() });
+            n = await cmd.ExecuteNonQueryAsync(ct);
+        }
+        await tx.CommitAsync(ct);
+        return n;
+    }
+
+    /// <summary>Clientes com política alterada depois do snapshot de hoje (ou sem snapshot de hoje e com inventário).</summary>
+    public async Task<List<long>> ClientesParaRecalcularAsync(CancellationToken ct)
+    {
+        await using var conn = await db.AbrirAsync(ct);
+        await using var cmd = new NpgsqlCommand(PoliticaSql.ClientesParaRecalcular, conn);
+        var l = new List<long>();
+        await using var r = await cmd.ExecuteReaderAsync(ct);
+        while (await r.ReadAsync(ct)) l.Add(r.GetInt64(0));
+        return l;
+    }
+
+    public async Task AcrescentarAvisoAsync(long jobId, string aviso, CancellationToken ct)
+    {
+        await using var conn = await db.AbrirAsync(ct);
+        await using var cmd = new NpgsqlCommand(ImportadorSql.AcrescentarAviso, conn);
+        cmd.Parameters.Add(new NpgsqlParameter("aviso", NpgsqlDbType.Text) { Value = aviso.Length <= 300 ? aviso : aviso[..299] + "…" });
+        cmd.Parameters.Add(new NpgsqlParameter("job", NpgsqlDbType.Bigint) { Value = jobId });
+        await cmd.ExecuteNonQueryAsync(ct);
     }
 
     /// <summary>Marca ERRO (transação própria; a da importação já foi desfeita).</summary>
@@ -276,6 +321,33 @@ public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorReposit
     }
 }
 
+public static class ImportadorRegras
+{
+    /// <summary>
+    /// Executa o snapshot sem nunca lançar (exceto cancelamento): em falha, tenta registrar o aviso
+    /// no resumo e devolve o texto do aviso; sucesso → null.
+    /// </summary>
+    public static async Task<string?> TentarSnapshotAsync(Func<Task> snapshot, Func<string, Task> registrarAviso)
+    {
+        try
+        {
+            await snapshot();
+            return null;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            var aviso = AvisoSnapshot(ex);
+            try { await registrarAviso(aviso); }
+            catch (Exception ex2) when (ex2 is not OperationCanceledException) { }
+            return aviso;
+        }
+    }
+
+    /// <summary>Aviso curto e seguro (sem texto de exceção além do diagnóstico sanitizado).</summary>
+    public static string AvisoSnapshot(Exception ex) =>
+        $"snapshot de conformidade da política de tags não atualizado ({ex.GetType().Name}{((ex as PostgresException)?.SqlState is { } s ? $" {s}" : "")})";
+}
+
 /// <summary>Falha esperada da importação: a mensagem é segura para gravar em job_execucao.erro.</summary>
 public sealed class ImportacaoException(string mensagem) : Exception(mensagem);
 
@@ -304,6 +376,7 @@ public sealed class ImportarColetasJob(ImportadorRepositorio repo, ParametroRepo
                 if (job is null) break;
                 await ImportarAsync(job, ct);
             }
+            await RecalcularPoliticasAlteradasAsync(ct);
             await AjustarIntervaloAsync(context.Scheduler, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -319,6 +392,8 @@ public sealed class ImportarColetasJob(ImportadorRepositorio repo, ParametroRepo
         {
             var resumo = await repo.ImportarAsync(job, ct);
             logger.LogInformation("Job {Job} importado: {Resumo}", job.Id, JsonSerializer.Serialize(resumo["linhas"]));
+            if (resumo.ContainsKey("inventario"))
+                await SnapshotAposImportacaoAsync(job, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -327,6 +402,38 @@ public sealed class ImportarColetasJob(ImportadorRepositorio repo, ParametroRepo
                 : $"Falha na importação ({ex.GetType().Name}{((ex as PostgresException)?.SqlState is { } s ? $" {s}" : "")}): {Diagnostico.De(ex)}";
             logger.LogError("Job {Job}: importação falhou: {Mensagem}", job.Id, mensagem);
             await repo.MarcarErroAsync(job.Id, mensagem, ct);
+        }
+    }
+
+    /// <summary>
+    /// Snapshot de conformidade depois da importação com inventário. Falha NÃO derruba a importação
+    /// (já commitada): vira aviso em resumo.importacao e log.
+    /// </summary>
+    private async Task SnapshotAposImportacaoAsync(JobImportacao job, CancellationToken ct)
+    {
+        var aviso = await ImportadorRegras.TentarSnapshotAsync(
+            () => repo.SnapshotConformidadeAsync(job.ClienteId, job.ColetadoEm ?? DateTimeOffset.UtcNow, ct),
+            a => repo.AcrescentarAvisoAsync(job.Id, a, ct));
+        if (aviso is not null) logger.LogWarning("Job {Job}: {Aviso}", job.Id, aviso);
+    }
+
+    /// <summary>Política alterada (ou dia novo sem snapshot): recalcula o snapshot de hoje. Falha só loga.</summary>
+    private async Task RecalcularPoliticasAlteradasAsync(CancellationToken ct)
+    {
+        List<long> clientes;
+        try { clientes = await repo.ClientesParaRecalcularAsync(ct); }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning("Política de tags: falha ao procurar clientes para recalcular ({Detalhe}).", Diagnostico.De(ex));
+            return;
+        }
+        foreach (var cliente in clientes)
+        {
+            try { await repo.SnapshotConformidadeAsync(cliente, DateTimeOffset.UtcNow, ct); }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning("Política de tags: snapshot do cliente {Cliente} falhou ({Detalhe}).", cliente, Diagnostico.De(ex));
+            }
         }
     }
 

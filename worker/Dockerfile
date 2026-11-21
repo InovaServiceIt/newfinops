@@ -9,6 +9,8 @@ COPY worker/CloudVista.Worker.csproj worker/
 RUN dotnet restore worker/CloudVista.Worker.csproj
 
 COPY worker/ worker/
+# SQL compartilhado com a API (linkado pelo csproj do worker).
+COPY backend/Compartilhado/ backend/Compartilhado/
 RUN dotnet publish worker/CloudVista.Worker.csproj -c Release -o /app/publish --no-restore
 
 # ── Runtime ──────────────────────────────────────────────────────────────────

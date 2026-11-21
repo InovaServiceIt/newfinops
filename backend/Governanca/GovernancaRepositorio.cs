@@ -1,3 +1,4 @@
+using Finops.Backend.Compartilhado;
 using System.Text.Json;
 using Finops.Backend.Identidade;
 using Finops.Backend.Infrastructure;
@@ -121,6 +122,20 @@ SELECT cc.nome, r.nome, r.chave, r.tipo, r.regiao, a.caminho, r.estado, array_to
 ORDER BY cc.nome, a.caminho NULLS LAST, lower(r.nome), r.chave
 LIMIT @limite";
 
+    public const string PresentesSimples = "presentes AS (SELECT DISTINCT cloud_conta_id, chave, tag FROM pares),";
+
+    public static readonly string PresentesPolitica = PoliticaSql.Pol.Trim() + @",
+presentes AS (
+    SELECT DISTINCT pr.cloud_conta_id, pr.chave, pr.tag
+    FROM pares pr
+    JOIN pol ON pol.tag = pr.tag
+    WHERE pr.valor IS NOT NULL AND btrim(pr.valor) <> ''
+      AND (NOT pol.restrita OR " + TagsSql.Norm("pr.valor") + @" = ANY(pol.permitidos))
+),";
+
+    /// <summary>Mesma consulta avaliando a política do cliente (valores permitidos) em vez de só presença.</summary>
+    public static string Politica(string sql) => sql.Replace(PresentesSimples, PresentesPolitica);
+
     /// <summary>Valores exatos da chave (a normalização sem acento é feita em C#: unaccent indisponível).</summary>
     public const string Valores = Com + @"
 SELECT valor, count(*) FROM pares WHERE tag = @chave AND valor IS NOT NULL GROUP BY valor";
@@ -181,12 +196,12 @@ public sealed class GovernancaRepositorio(CloudVistaDb db)
             return new ResumoGovernanca(total, comTag, total - comTag, chaves, truncado, porTipo, prov);
         }, ct);
 
-    public Task<AvaliacaoGovernanca> AvaliarAsync(UsuarioAtual u, FiltroGovernanca f, string[] chaves, CancellationToken ct) =>
+    public Task<AvaliacaoGovernanca> AvaliarAsync(UsuarioAtual u, FiltroGovernanca f, string[] chaves, CancellationToken ct, bool politica = false) =>
         db.ExecutarComContextoAsync(u, async (conn, tx) =>
         {
             NpgsqlCommand Cmd(string sql)
             {
-                var c = Comando(conn, tx, sql, f, chaves);
+                var c = Comando(conn, tx, politica ? GovernancaSql.Politica(sql) : sql, f, chaves, politica);
                 c.Parameters.Add(new NpgsqlParameter("top", NpgsqlDbType.Integer) { Value = GovernancaRegras.TopGrupos });
                 return c;
             }
@@ -227,15 +242,15 @@ public sealed class GovernancaRepositorio(CloudVistaDb db)
             return GovernancaRegras.Variacoes(valores);
         }, ct);
 
-    public Task<PaginaNaoConformes> NaoConformesAsync(UsuarioAtual u, FiltroGovernanca f, string[] chaves, string? faltando, int pagina, CancellationToken ct) =>
+    public Task<PaginaNaoConformes> NaoConformesAsync(UsuarioAtual u, FiltroGovernanca f, string[] chaves, string? faltando, int pagina, CancellationToken ct, bool politica = false) =>
         db.ExecutarComContextoAsync(u, async (conn, tx) =>
         {
             long total;
-            await using (var cmd = ComandoNc(conn, tx, GovernancaSql.ContarNaoConformes, f, chaves, faltando))
+            await using (var cmd = ComandoNc(conn, tx, GovernancaSql.ContarNaoConformes, f, chaves, faltando, politica))
                 total = (long)(await cmd.ExecuteScalarAsync(ct))!;
 
             var itens = new List<NaoConformeItem>();
-            await using (var cmd = ComandoNc(conn, tx, GovernancaSql.ListarNaoConformes, f, chaves, faltando))
+            await using (var cmd = ComandoNc(conn, tx, GovernancaSql.ListarNaoConformes, f, chaves, faltando, politica))
             {
                 cmd.Parameters.Add(new NpgsqlParameter("limite", NpgsqlDbType.Integer) { Value = InventarioRegras.TamanhoPagina });
                 cmd.Parameters.Add(new NpgsqlParameter("deslocamento", NpgsqlDbType.Integer) { Value = (pagina - 1) * InventarioRegras.TamanhoPagina });
@@ -252,11 +267,11 @@ public sealed class GovernancaRepositorio(CloudVistaDb db)
             return new PaginaNaoConformes(itens, total, pagina, InventarioRegras.TamanhoPagina);
         }, ct);
 
-    public Task<List<string>> ExportarAsync(UsuarioAtual u, FiltroGovernanca f, string[] chaves, string? faltando, CancellationToken ct) =>
+    public Task<List<string>> ExportarAsync(UsuarioAtual u, FiltroGovernanca f, string[] chaves, string? faltando, CancellationToken ct, bool politica = false) =>
         db.ExecutarComContextoAsync(u, async (conn, tx) =>
         {
             var linhas = new List<string> { InventarioRegras.LinhaCsv(GovernancaRegras.CabecalhoCsv) };
-            await using var cmd = ComandoNc(conn, tx, GovernancaSql.ExportarNaoConformes, f, chaves, faltando);
+            await using var cmd = ComandoNc(conn, tx, GovernancaSql.ExportarNaoConformes, f, chaves, faltando, politica);
             cmd.Parameters.Add(new NpgsqlParameter("limite", NpgsqlDbType.Integer) { Value = InventarioRegras.LimiteCsv });
             await using var r = await cmd.ExecuteReaderAsync(ct);
             while (await r.ReadAsync(ct))
@@ -269,7 +284,8 @@ public sealed class GovernancaRepositorio(CloudVistaDb db)
 
     // ── auxiliares ──────────────────────────────────────────────────────────
 
-    private static NpgsqlCommand Comando(NpgsqlConnection conn, NpgsqlTransaction tx, string sql, FiltroGovernanca f, string[]? chaves = null)
+    private static NpgsqlCommand Comando(NpgsqlConnection conn, NpgsqlTransaction tx, string sql, FiltroGovernanca f, string[]? chaves = null,
+        bool politica = false)
     {
         var cmd = new NpgsqlCommand(sql, conn, tx);
         void Texto(string nome, string? valor) =>
@@ -281,15 +297,17 @@ public sealed class GovernancaRepositorio(CloudVistaDb db)
         Texto("compartimento", f.Compartimento);
         Texto("compartimento_prefixo", f.Compartimento is null ? null : InventarioRegras.EscaparLike(f.Compartimento) + "/%");
         // Na avaliação a presença considera também as automáticas (presença é presença).
-        cmd.Parameters.Add(new NpgsqlParameter("automaticas", NpgsqlDbType.Boolean) { Value = f.Automaticas || chaves is not null });
+        // Política: automáticas nunca satisfazem (false). Ad hoc: presença é presença.
+        cmd.Parameters.Add(new NpgsqlParameter("automaticas", NpgsqlDbType.Boolean) { Value = !politica && (f.Automaticas || chaves is not null) });
         if (chaves is not null)
             cmd.Parameters.Add(new NpgsqlParameter("chaves", NpgsqlDbType.Array | NpgsqlDbType.Text) { Value = chaves });
         return cmd;
     }
 
-    private static NpgsqlCommand ComandoNc(NpgsqlConnection conn, NpgsqlTransaction tx, string sql, FiltroGovernanca f, string[] chaves, string? faltando)
+    private static NpgsqlCommand ComandoNc(NpgsqlConnection conn, NpgsqlTransaction tx, string sql, FiltroGovernanca f, string[] chaves, string? faltando,
+        bool politica = false)
     {
-        var cmd = Comando(conn, tx, sql, f, chaves);
+        var cmd = Comando(conn, tx, politica ? GovernancaSql.Politica(sql) : sql, f, chaves, politica);
         cmd.Parameters.Add(new NpgsqlParameter("faltando", NpgsqlDbType.Text) { Value = (object?)faltando ?? DBNull.Value });
         return cmd;
     }

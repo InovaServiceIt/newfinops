@@ -85,14 +85,19 @@ public sealed class ExploradorRepositorio(CloudVistaDb db)
                     creditos.Add(new LinhaAgregada(r.GetFieldValue<DateOnly>(0), "", "", r.GetString(1).Trim(), r.GetDecimal(2)));
             }
 
-            // Fator: exatamente a regra da Visão Geral (FatorRegras.Disponivel / Aplicar). CLIENTE nunca.
-            var fatores = podeFator
-                ? await CustosRepositorio.LerFatoresAsync(conn, tx, CustosSql.ListarFatores, c.ClienteId, null, ct)
-                : [];
+            // Fator: exatamente a regra da Visão Geral (FatorRegras). Admin/analista: toggle.
+            // CLIENTE: sempre com fator, estrito (período sem fator vigente some = "em apuração").
+            var fatores = await CustosRepositorio.LerFatoresAsync(conn, tx, CustosSql.ListarFatores, c.ClienteId, null, ct);
             var periodos = ExploradorRegras.Periodos(c.Granularidade, c.De, c.Ate);
-            var fatorDisponivel = podeFator && FatorRegras.Disponivel(fatores, c.ContaId, hoje, periodos);
-            var comFator = c.ComFator && fatorDisponivel;
-            if (comFator)
+            var cliente = !podeFator;
+            var fatorDisponivel = FatorRegras.Disponivel(fatores, c.ContaId, hoje, periodos);
+            var comFator = cliente || (c.ComFator && fatorDisponivel);
+            if (cliente)
+            {
+                linhas = FatorRegras.AplicarEstrito(linhas, fatores, c.ContaId).ToList();
+                creditos = FatorRegras.AplicarEstrito(creditos, fatores, c.ContaId).ToList();
+            }
+            else if (comFator)
             {
                 linhas = FatorRegras.Aplicar(linhas, fatores, c.ContaId).ToList();
                 creditos = FatorRegras.Aplicar(creditos, fatores, c.ContaId).ToList();
@@ -103,7 +108,8 @@ public sealed class ExploradorRepositorio(CloudVistaDb db)
 
             var rotulos = await RotulosAsync(conn, tx, c, linhas.Where(l => l.Periodo >= c.De).Select(l => l.Chave).Distinct().ToArray(), ct);
             var prov = await ProvenienciaAsync(conn, tx, c.ClienteId, c.ContaId, ct);
-            return ExploradorRegras.Montar(c, linhas, totalCreditos, rotulos, comFator, fatorDisponivel, prov);
+            Func<DateOnly, bool>? emApuracao = cliente ? p => FatorRegras.EmApuracao(fatores, c.ContaId, p) : null;
+            return ExploradorRegras.Montar(c, linhas, totalCreditos, rotulos, comFator, fatorDisponivel, prov, emApuracao);
         }, ct);
 
     public Task<List<string>> ValoresAsync(UsuarioAtual u, long clienteId, long? contaId, string dimensao, string? tagChave, string? busca, CancellationToken ct) =>

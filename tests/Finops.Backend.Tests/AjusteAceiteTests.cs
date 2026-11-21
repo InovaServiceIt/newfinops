@@ -1,3 +1,4 @@
+using Finops.Backend.Compartilhado;
 using Finops.Backend.Coletas;
 using Finops.Backend.Governanca;
 using Finops.Backend.Inventario;

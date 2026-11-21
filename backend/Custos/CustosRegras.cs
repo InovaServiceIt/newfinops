@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using Finops.Backend.Admin;
 
 namespace Finops.Backend.Custos;
@@ -37,6 +38,17 @@ public static class FatorRegras
     public static IReadOnlyList<LinhaAgregada> Aplicar(IReadOnlyList<LinhaAgregada> linhas, IReadOnlyList<FatorCliente> fatores, long? contaId) =>
         fatores.Count == 0 ? linhas : linhas.Select(l => l with { Valor = l.Valor * (Vigente(fatores, contaId, l.Periodo) ?? 1m) }).ToList();
 
+    /// <summary>
+    /// Perfil CLIENTE: só períodos com fator vigente (multiplicados); período sem fator some
+    /// (o CLIENTE nunca vê custo bruto).
+    /// </summary>
+    public static IReadOnlyList<LinhaAgregada> AplicarEstrito(IReadOnlyList<LinhaAgregada> linhas, IReadOnlyList<FatorCliente> fatores, long? contaId) =>
+        linhas.Select(l => (l, f: Vigente(fatores, contaId, l.Periodo)))
+            .Where(x => x.f is not null).Select(x => x.l with { Valor = x.l.Valor * x.f!.Value }).ToList();
+
+    /// <summary>Período "em apuração" para o CLIENTE: sem fator vigente na data.</summary>
+    public static bool EmApuracao(IReadOnlyList<FatorCliente> fatores, long? contaId, DateOnly data) => Vigente(fatores, contaId, data) is null;
+
     /// <summary>Há fator vigente hoje ou em algum dos períodos considerados?</summary>
     public static bool Disponivel(IReadOnlyList<FatorCliente> fatores, long? contaId, DateOnly hoje, IEnumerable<DateOnly> periodos) =>
         fatores.Count > 0 && (Vigente(fatores, contaId, hoje) is not null || periodos.Distinct().Any(p => Vigente(fatores, contaId, p) is not null));
@@ -73,19 +85,23 @@ public sealed record DadosVisaoGeral(
     IReadOnlyList<FatorCliente> Fatores,
     IReadOnlyDictionary<string, string>? NomesRecursos = null);
 
-public sealed record Kpis(decimal MesCorrente, decimal MesAnterior, decimal Ytd, decimal PrevisaoMes, decimal CreditosMes);
-public sealed record PontoMensal(string Mes, string Rotulo, bool Parcial, IReadOnlyDictionary<string, decimal> Valores, decimal Total);
-public sealed record PontoDiario(string Dia, IReadOnlyDictionary<string, decimal> Valores);
+/// <summary>KPI nulo = em apuração (perfil CLIENTE sem fator vigente no período do KPI).</summary>
+public sealed record Kpis(decimal? MesCorrente, decimal? MesAnterior, decimal? Ytd, decimal? PrevisaoMes, decimal? CreditosMes);
+public sealed record PontoMensal(string Mes, string Rotulo, bool Parcial, IReadOnlyDictionary<string, decimal> Valores, decimal Total,
+    bool EmApuracao = false);
+public sealed record PontoDiario(string Dia, IReadOnlyDictionary<string, decimal> Valores, bool EmApuracao = false);
 /// <summary>Chave: identificador técnico (OCID) quando o nome veio do inventário.</summary>
 public sealed record ItemValor(string Nome, decimal Valor, string? Detalhe = null, string? Chave = null);
 
 public sealed record VisaoMoeda(string Moeda, Kpis Kpis, IReadOnlyList<string> ServicosMensal, IReadOnlyList<PontoMensal> Mensal,
     IReadOnlyList<ItemValor> Donut, IReadOnlyList<string> ServicosDiario, IReadOnlyList<PontoDiario> Diario,
-    IReadOnlyList<ItemValor> TopCompartimentos, IReadOnlyList<ItemValor> TopRecursos);
+    IReadOnlyList<ItemValor> TopCompartimentos, IReadOnlyList<ItemValor> TopRecursos, bool MesEmApuracao = false);
 
 public sealed record VisaoGeralResposta(long ClienteId, long? ContaId, DateOnly Hoje, DateOnly? DadosAte, long? UltimoJob,
-    DateTimeOffset? UltimaImportacao, bool ComFator, bool FatorDisponivel, decimal? FatorAtual, bool Vazio,
-    IReadOnlyList<VisaoMoeda> Moedas);
+    DateTimeOffset? UltimaImportacao, bool ComFator,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? FatorDisponivel,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? FatorAtual,
+    bool Vazio, IReadOnlyList<VisaoMoeda> Moedas, bool EmApuracao = false);
 
 /// <summary>Montagem da Visão Geral a partir das linhas agregadas (funções puras).</summary>
 public static class VisaoGeralCustos
@@ -118,14 +134,21 @@ public static class VisaoGeralCustos
         return TimeZoneInfo.CreateCustomTimeZone("BRT", TimeSpan.FromHours(-3), "BRT", "BRT");
     }
 
-    public static VisaoGeralResposta Montar(long clienteId, long? contaId, DateOnly hoje, DadosVisaoGeral d, bool comFatorPedido)
+    /// <param name="cliente">
+    /// Perfil CLIENTE: sempre com fator (aplicado aqui); período sem fator vigente fica "em apuração"
+    /// (sem número). Fator, disponibilidade e custo bruto nunca saem na resposta.
+    /// </param>
+    public static VisaoGeralResposta Montar(long clienteId, long? contaId, DateOnly hoje, DadosVisaoGeral d, bool comFatorPedido, bool cliente = false)
     {
         var fatorAtual = FatorRegras.Vigente(d.Fatores, contaId, hoje);
         var fatorDisponivel = FatorRegras.Disponivel(d.Fatores, contaId, hoje, d.ServicoMes.Select(l => l.Periodo));
-        var comFator = comFatorPedido && fatorDisponivel;
+        var comFator = cliente || (comFatorPedido && fatorDisponivel);
+        Func<DateOnly, bool>? emApuracao = cliente ? data => FatorRegras.EmApuracao(d.Fatores, contaId, data) : null;
 
-        // Multiplica pelo fator vigente na data do período (sem fator naquela data: valor bruto).
-        IReadOnlyList<LinhaAgregada> F(IReadOnlyList<LinhaAgregada> linhas) => comFator ? FatorRegras.Aplicar(linhas, d.Fatores, contaId) : linhas;
+        // Admin/analista: fator vigente na data do período (sem fator: valor bruto). CLIENTE: estrito.
+        IReadOnlyList<LinhaAgregada> F(IReadOnlyList<LinhaAgregada> linhas) =>
+            cliente ? FatorRegras.AplicarEstrito(linhas, d.Fatores, contaId)
+            : comFator ? FatorRegras.Aplicar(linhas, d.Fatores, contaId) : linhas;
 
         var servicoMes = F(d.ServicoMes);
         var servicoDia = F(d.ServicoDia);
@@ -139,17 +162,20 @@ public static class VisaoGeralCustos
             .Select(l => l.Moeda).Distinct().Order(StringComparer.Ordinal).ToList();
 
         var nomes = d.NomesRecursos ?? new Dictionary<string, string>();
-        var visoes = moedas.Select(m => MontarMoeda(m, hoje, mesAtual, d.DadosAte, nomes,
+        var visoes = moedas.Select(m => MontarMoeda(m, hoje, mesAtual, d.DadosAte, nomes, emApuracao,
             servicoMes.Where(l => l.Moeda == m).ToList(), servicoDia.Where(l => l.Moeda == m).ToList(),
             compMes.Where(l => l.Moeda == m).ToList(), recursoMes.Where(l => l.Moeda == m).ToList(),
             previsao.Where(l => l.Moeda == m).ToList(), credito.Where(l => l.Moeda == m).ToList())).ToList();
 
-        return new VisaoGeralResposta(clienteId, contaId, hoje, d.DadosAte, d.UltimoJob, d.UltimaImportacao,
-            comFator, fatorDisponivel, fatorAtual, visoes.Count == 0, visoes);
+        // CLIENTE sem nenhum período apurado ainda: a tela mostra "Valores em apuração", não "sem custo".
+        var algumBruto = d.ServicoMes.Count + d.ServicoDia.Count > 0;
+        return new VisaoGeralResposta(clienteId, contaId, hoje, d.DadosAte, d.UltimoJob, d.UltimaImportacao, comFator,
+            cliente ? null : fatorDisponivel, cliente ? null : fatorAtual,
+            visoes.Count == 0, visoes, cliente && algumBruto && visoes.Count == 0);
     }
 
     private static VisaoMoeda MontarMoeda(string moeda, DateOnly hoje, DateOnly mesAtual, DateOnly? dadosAte,
-        IReadOnlyDictionary<string, string> nomes,
+        IReadOnlyDictionary<string, string> nomes, Func<DateOnly, bool>? emApuracao,
         List<LinhaAgregada> servicoMes, List<LinhaAgregada> servicoDia, List<LinhaAgregada> compMes,
         List<LinhaAgregada> recursoMes, List<LinhaAgregada> previsao, List<LinhaAgregada> credito)
     {
@@ -167,14 +193,36 @@ public static class VisaoGeralCustos
         var kpis = new Kpis(realizadoMes, anteriorMes, ytd, realizadoMes + restante,
             credito.Where(l => l.Periodo == mesAtual).Sum(l => l.Valor));
 
+        // CLIENTE: KPI que depende de algum período sem fator vigente fica nulo ("em apuração").
+        bool Algum(DateOnly de, DateOnly ate, bool mensal = false)
+        {
+            if (emApuracao is null) return false;
+            for (var x = de; x <= ate; x = mensal ? x.AddMonths(1) : x.AddDays(1))
+                if (emApuracao(x)) return true;
+            return false;
+        }
+        if (emApuracao is not null)
+        {
+            var fimReal = ultimoReal is { } u && u >= mesAtual ? u : hoje;
+            var mesCorrenteApurado = !Algum(mesAtual, fimReal);
+            kpis = new Kpis(
+                mesCorrenteApurado ? kpis.MesCorrente : null,
+                Algum(mesAnterior, mesAtual.AddDays(-1)) ? null : kpis.MesAnterior,
+                Algum(new DateOnly(hoje.Year, 1, 1), mesAtual, mensal: true) ? null : kpis.Ytd,
+                mesCorrenteApurado && !Algum(fimReal, mesAtual.AddMonths(1).AddDays(-1)) ? kpis.PrevisaoMes : null,
+                emApuracao(mesAtual) ? null : kpis.CreditosMes);
+        }
+
         // ── Mensal empilhado por serviço (12 meses; top 8 + Outros) ──
         var topMensal = Top(servicoMes.GroupBy(l => l.Chave).Select(g => (g.Key, g.Sum(l => l.Valor))), ServicosEmpilhados);
         var mensal = Enumerable.Range(0, 12).Select(i => InicioDozeMeses(hoje).AddMonths(i)).Select(mes =>
         {
             var doMes = servicoMes.Where(l => l.Periodo == mes).ToList();
             var valores = Agrupar(doMes.Select(l => (l.Chave, l.Valor)), topMensal);
+            var apuracao = emApuracao?.Invoke(mes) ?? false;
             return new PontoMensal(mes.ToString("yyyy-MM", CultureInfo.InvariantCulture),
-                $"{Meses[mes.Month - 1]}/{mes.Year % 100:D2}", mes == mesAtual, valores, doMes.Sum(l => l.Valor));
+                $"{Meses[mes.Month - 1]}/{mes.Year % 100:D2}", mes == mesAtual,
+                apuracao ? new Dictionary<string, decimal>() : valores, apuracao ? 0m : doMes.Sum(l => l.Valor), apuracao);
         }).ToList();
         var servicosMensal = topMensal.Concat(mensal.Any(p => p.Valores.ContainsKey(Outros)) ? [Outros] : []).ToList();
 
@@ -192,8 +240,10 @@ public static class VisaoGeralCustos
         var topDiario = Top(janela.GroupBy(l => l.Chave).Select(g => (g.Key, g.Sum(l => l.Valor))), ServicosLinha);
         var diario = Enumerable.Range(0, 30).Select(i => inicio30.AddDays(i))
             .Where(dia => ultimoReal is null || dia <= ultimoReal)
-            .Select(dia => new PontoDiario(dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                Agrupar(janela.Where(l => l.Periodo == dia).Select(l => (l.Chave, l.Valor)), topDiario, preencher: true)))
+            .Select(dia => (emApuracao?.Invoke(dia) ?? false)
+                ? new PontoDiario(dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), new Dictionary<string, decimal>(), true)
+                : new PontoDiario(dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    Agrupar(janela.Where(l => l.Periodo == dia).Select(l => (l.Chave, l.Valor)), topDiario, preencher: true)))
             .ToList();
         var servicosDiario = topDiario.Concat(diario.Any(p => p.Valores.GetValueOrDefault(Outros) != 0) ? [Outros] : []).ToList();
 
@@ -205,7 +255,11 @@ public static class VisaoGeralCustos
                 string.IsNullOrEmpty(g.Key.Chave2) ? null : g.Key.Chave2, g.Key.Chave))
             .OrderByDescending(i => i.Valor).Take(TopN).ToList();
 
-        return new VisaoMoeda(moeda, kpis, servicosMensal, mensal, donut, servicosDiario, diario, topComp, topRec);
+        // CLIENTE com o mês corrente em apuração: sem números do mês (donut e tops vazios).
+        var mesEmApuracao = emApuracao is not null && kpis.MesCorrente is null;
+        if (mesEmApuracao) { donut = []; topComp = []; topRec = []; }
+
+        return new VisaoMoeda(moeda, kpis, servicosMensal, mensal, donut, servicosDiario, diario, topComp, topRec, mesEmApuracao);
     }
 
     /// <summary>Os N maiores (por valor) em ordem decrescente.</summary>
