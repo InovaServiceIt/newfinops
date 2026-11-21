@@ -31,6 +31,17 @@ public static class FatorRegras
             && f.VigenteDesde <= (ate ?? DateOnly.MaxValue) && desde <= (f.VigenteAte ?? DateOnly.MaxValue));
 
     /// <summary>
+    /// Regra única (Visão Geral e Explorador): multiplica cada linha pelo fator vigente na data do
+    /// período; período sem fator vigente fica com o valor bruto.
+    /// </summary>
+    public static IReadOnlyList<LinhaAgregada> Aplicar(IReadOnlyList<LinhaAgregada> linhas, IReadOnlyList<FatorCliente> fatores, long? contaId) =>
+        fatores.Count == 0 ? linhas : linhas.Select(l => l with { Valor = l.Valor * (Vigente(fatores, contaId, l.Periodo) ?? 1m) }).ToList();
+
+    /// <summary>Há fator vigente hoje ou em algum dos períodos considerados?</summary>
+    public static bool Disponivel(IReadOnlyList<FatorCliente> fatores, long? contaId, DateOnly hoje, IEnumerable<DateOnly> periodos) =>
+        fatores.Count > 0 && (Vigente(fatores, contaId, hoje) is not null || periodos.Distinct().Any(p => Vigente(fatores, contaId, p) is not null));
+
+    /// <summary>
     /// Fator vigente numa data. Com conta: prefere o da conta, senão o do cliente (conta nula).
     /// Sem conta (visão do cliente todo): só o do cliente. Empate: o de vigência mais recente.
     /// </summary>
@@ -110,14 +121,11 @@ public static class VisaoGeralCustos
     public static VisaoGeralResposta Montar(long clienteId, long? contaId, DateOnly hoje, DadosVisaoGeral d, bool comFatorPedido)
     {
         var fatorAtual = FatorRegras.Vigente(d.Fatores, contaId, hoje);
-        var fatorDisponivel = d.Fatores.Count > 0 && (fatorAtual is not null
-            || d.ServicoMes.Select(l => l.Periodo).Distinct().Any(p => FatorRegras.Vigente(d.Fatores, contaId, p) is not null));
+        var fatorDisponivel = FatorRegras.Disponivel(d.Fatores, contaId, hoje, d.ServicoMes.Select(l => l.Periodo));
         var comFator = comFatorPedido && fatorDisponivel;
 
         // Multiplica pelo fator vigente na data do período (sem fator naquela data: valor bruto).
-        IReadOnlyList<LinhaAgregada> F(IReadOnlyList<LinhaAgregada> linhas) => !comFator
-            ? linhas
-            : linhas.Select(l => l with { Valor = l.Valor * (FatorRegras.Vigente(d.Fatores, contaId, l.Periodo) ?? 1m) }).ToList();
+        IReadOnlyList<LinhaAgregada> F(IReadOnlyList<LinhaAgregada> linhas) => comFator ? FatorRegras.Aplicar(linhas, d.Fatores, contaId) : linhas;
 
         var servicoMes = F(d.ServicoMes);
         var servicoDia = F(d.ServicoDia);

@@ -94,6 +94,7 @@ builder.Services.AddSingleton<Finops.Backend.Cofre.CofreServico>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Finops.Backend.Custos.CustosRepositorio>();
+builder.Services.AddSingleton<Finops.Backend.Custos.ExploradorRepositorio>();
 builder.Services.AddSingleton<Finops.Backend.Inventario.InventarioRepositorio>();
 builder.Services.AddSingleton<Finops.Backend.Governanca.GovernancaRepositorio>();
 

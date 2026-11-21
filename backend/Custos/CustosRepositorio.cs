@@ -231,7 +231,7 @@ public sealed class CustosRepositorio
         (await LerFatoresAsync(conn, tx, CustosSql.FatorPorId, null, id, ct)).SingleOrDefault()
         ?? throw ErroNegocioException.NaoEncontrado("Fator não encontrado.");
 
-    private static async Task<List<FatorCliente>> LerFatoresAsync(NpgsqlConnection conn, NpgsqlTransaction tx, string sql,
+    internal static async Task<List<FatorCliente>> LerFatoresAsync(NpgsqlConnection conn, NpgsqlTransaction tx, string sql,
         long? clienteId, long? id, CancellationToken ct)
     {
         await using var cmd = new NpgsqlCommand(sql, conn, tx);
