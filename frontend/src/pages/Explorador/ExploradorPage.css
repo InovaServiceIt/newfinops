@@ -1,0 +1,184 @@
+.exp-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: none;
+}
+
+.exp-barra {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4);
+  align-items: end;
+}
+
+.exp-fator {
+  align-self: center;
+  padding-top: var(--space-4);
+  grid-column: span 2;
+}
+
+/* ── Filtro de valores ───────────────────────────────────────────────────── */
+.exp-filtro {
+  position: relative;
+  grid-column: 1 / -1;
+}
+
+.exp-filtro-caixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 38px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.exp-filtro-caixa:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.exp-filtro-input {
+  flex: 1;
+  min-width: 160px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--text);
+  padding: var(--space-1);
+}
+
+.exp-filtro-input:focus {
+  outline: none;
+}
+
+.exp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 260px;
+  color: var(--text);
+}
+
+.exp-chip button {
+  display: inline-flex;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.exp-chip button:hover {
+  color: var(--text);
+}
+
+.exp-sugestoes {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  list-style: none;
+  margin-top: 4px;
+  padding: var(--space-1);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.exp-sugestoes button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exp-sugestoes button:hover {
+  background: var(--surface-hover);
+}
+
+/* ── KPIs ────────────────────────────────────────────────────────────────── */
+.exp-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.exp-variacao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Aumento de custo = alerta (sem vermelho chamativo); redução = neutro positivo. */
+.exp-sobe {
+  color: var(--warning);
+}
+
+.exp-desce {
+  color: var(--success);
+}
+
+.exp-maior {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exp-modo {
+  border-bottom: 0;
+}
+
+/* ── Tabela ──────────────────────────────────────────────────────────────── */
+.exp-grupo {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.exp-grupo .vg-legenda-cor {
+  margin-right: var(--space-2);
+}
+
+.exp-chave {
+  margin-left: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.exp-spark {
+  display: block;
+}
+
+@media (max-width: 1400px) {
+  .exp-barra { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .exp-barra { grid-template-columns: minmax(0, 1fr); }
+  .exp-fator { grid-column: auto; }
+}

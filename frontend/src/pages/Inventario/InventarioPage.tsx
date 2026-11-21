@@ -191,7 +191,7 @@ const InventarioPage: React.FC = () => {
 
       {vazio && (
         <div className="ui-card ui-empty">
-          Nenhum inventário importado para este filtro. Verifique em <Link to="/coletas">Coletas</Link>.
+          <span>Nenhum inventário importado para este filtro. Verifique em <Link to="/coletas">Coletas</Link>.</span>
         </div>
       )}
 

@@ -15,6 +15,7 @@ import ColetasPage from './pages/Coletas/ColetasPage';
 const VisaoGeralPage = lazy(() => import('./pages/VisaoGeral/VisaoGeralPage'));
 const InventarioPage = lazy(() => import('./pages/Inventario/InventarioPage'));
 const GovernancaPage = lazy(() => import('./pages/Governanca/GovernancaPage'));
+const ExploradorPage = lazy(() => import('./pages/Explorador/ExploradorPage'));
 
 /** Páginas já implementadas; os demais itens do menu usam o placeholder. */
 const PAGINAS: Record<string, ReactElement> = {
@@ -26,6 +27,11 @@ const PAGINAS: Record<string, ReactElement> = {
   '/inventario-multicloud': (
     <Suspense fallback={<div className="page-content"><div className="ui-skeleton" style={{ height: 320 }} /></div>}>
       <InventarioPage />
+    </Suspense>
+  ),
+  '/explorador-de-custos': (
+    <Suspense fallback={<div className="page-content"><div className="ui-skeleton" style={{ height: 320 }} /></div>}>
+      <ExploradorPage />
     </Suspense>
   ),
   '/governanca-de-tags': (

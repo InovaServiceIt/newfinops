@@ -114,7 +114,7 @@ const VisaoGeralPage: React.FC = () => {
       {visao.status === 'erro' && <Alerta texto={visao.mensagem} />}
       {v && v.vazio && (
         <div className="ui-card ui-empty">
-          Nenhum custo importado para este filtro. Verifique em <Link to="/coletas">Coletas</Link>.
+          <span>Nenhum custo importado para este filtro. Verifique em <Link to="/coletas">Coletas</Link>.</span>
         </div>
       )}
       {v && !v.vazio && <Conteudo v={v} />}
