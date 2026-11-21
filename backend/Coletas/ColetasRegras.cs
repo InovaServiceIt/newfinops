@@ -13,7 +13,8 @@ public sealed record ColetarEntrada(string? TipoJob, int? CostDays);
 public sealed record ColetaItem(
     long Id, string TipoJob, string? ClienteNome, string? ContaNome, string? Provedor, string Origem,
     string? SolicitadoPorNome, string Status, int Tentativas, DateTimeOffset CriadoEm, DateTimeOffset? IniciadoEm,
-    DateTimeOffset? FinalizadoEm, double? DuracaoSeg, string? Erro, JsonElement? Resumo, string? ColetorVersao);
+    DateTimeOffset? FinalizadoEm, double? DuracaoSeg, string? Erro, JsonElement? Resumo, string? ColetorVersao,
+    bool PodeReimportar = false);
 
 public sealed record PaginaColetas(IReadOnlyList<ColetaItem> Itens, long Total, int Pagina, int Tamanho);
 
@@ -42,6 +43,20 @@ public static class TiposJob
     public static readonly string[] Coletas = [ColetaCompleta, ColetaCusto, ColetaInventario];
     public static readonly string[] Todos = [ColetaCompleta, ColetaCusto, ColetaInventario, TesteCredencial];
     public static readonly string[] Status = ["PENDENTE", "EXECUTANDO", "COLETADO", "IMPORTANDO", "IMPORTADO", "CONCLUIDO", "ERRO", "CANCELADO"];
+}
+
+/// <summary>Reimportação (função reimportar_job do banco): mensagens da exceção → HTTP.</summary>
+public static class ReimportarRegras
+{
+    public static ErroNegocioException Mapear(string? mensagem)
+    {
+        var m = (mensagem ?? "").Trim().ToLowerInvariant();
+        if (m.Contains("perfil")) return new ErroNegocioException(StatusCodes.Status403Forbidden, "Só ADMINISTRADOR pode reimportar coletas.");
+        if (m.Contains("inexistente")) return ErroNegocioException.NaoEncontrado("Coleta não encontrada.");
+        if (m.Contains("sem_bruta")) return ErroNegocioException.Conflito("Esta coleta não tem o JSON bruto guardado; não dá para reimportar.");
+        if (m.Contains("status")) return ErroNegocioException.Conflito("Só coletas IMPORTADO ou ERRO podem ser reimportadas.");
+        return ErroNegocioException.Conflito("Não foi possível reimportar esta coleta.");
+    }
 }
 
 /// <summary>Regras de "Coletar agora" (funções puras).</summary>

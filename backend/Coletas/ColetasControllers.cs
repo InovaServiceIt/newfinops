@@ -59,6 +59,15 @@ public sealed class ColetasController(ColetasRepositorio repo, UsuarioAtualServi
         return Ok(await repo.ListarAsync(await UsuarioAsync(ct), filtro, ct));
     }
 
+    /// <summary>Reimporta uma coleta IMPORTADO/ERRO que tenha coleta_bruta (só ADMINISTRADOR; o banco também valida).</summary>
+    [HttpPost("{id:long}/reimportar")]
+    [Authorize(Policy = Politicas.Administrador)]
+    public async Task<IActionResult> Reimportar(long id, CancellationToken ct)
+    {
+        var anterior = await repo.ReimportarAsync(await UsuarioAsync(ct), id, ct);
+        return StatusCode(StatusCodes.Status202Accepted, new { jobId = id, statusAnterior = anterior });
+    }
+
     /// <summary>Se o usuário pode disparar "Coletar agora" (lê o parâmetro do banco).</summary>
     [HttpGet("permissao")]
     [Authorize(Policy = Politicas.Autorizado)]

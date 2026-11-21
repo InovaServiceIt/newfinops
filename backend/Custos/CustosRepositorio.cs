@@ -122,9 +122,10 @@ public sealed class CustosRepositorio
             }
 
             var fatores = await LerFatoresAsync(conn, tx, CustosSql.ListarFatores, clienteId, null, ct);
+            var nomes = await NomesRecursosAsync(conn, tx, clienteId, contaId, recursoMes.Select(l => l.Chave).Distinct().ToArray(), ct);
 
             return new DadosVisaoGeral(servicoMes, servicoDia, compMes, recursoMes, previsao, credito,
-                dadosAte, ultimoJob, ultimaImportacao, fatores);
+                dadosAte, ultimoJob, ultimaImportacao, fatores, nomes);
         }, ct);
 
     public Task<List<FatorCliente>> ListarFatoresAsync(UsuarioAtual usuario, long? clienteId, CancellationToken ct) =>
@@ -175,6 +176,19 @@ public sealed class CustosRepositorio
         }, ct);
 
     // ── auxiliares ──────────────────────────────────────────────────────────
+
+    /// <summary>Nome do inventário por OCID (sem inventário: vazio, a tela mostra o OCID).</summary>
+    private static async Task<Dictionary<string, string>> NomesRecursosAsync(NpgsqlConnection conn, NpgsqlTransaction tx,
+        long clienteId, long? contaId, string[] chaves, CancellationToken ct)
+    {
+        var nomes = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (chaves.Length == 0) return nomes;
+        await using var cmd = Comando(conn, tx, Finops.Backend.Inventario.InventarioSql.NomesRecursos, clienteId, contaId);
+        cmd.Parameters.Add(new NpgsqlParameter("chaves", NpgsqlDbType.Array | NpgsqlDbType.Text) { Value = chaves });
+        await using var r = await cmd.ExecuteReaderAsync(ct);
+        while (await r.ReadAsync(ct)) nomes[r.GetString(0)] = r.GetString(1);
+        return nomes;
+    }
 
     /// <summary>Trava o cliente, confere cliente/conta e rejeita vigência sobreposta.</summary>
     private static async Task PrepararAsync(NpgsqlConnection conn, NpgsqlTransaction tx, long clienteId, long? contaId,

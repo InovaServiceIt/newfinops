@@ -59,12 +59,14 @@ public sealed record DadosVisaoGeral(
     DateOnly? DadosAte,
     long? UltimoJob,
     DateTimeOffset? UltimaImportacao,
-    IReadOnlyList<FatorCliente> Fatores);
+    IReadOnlyList<FatorCliente> Fatores,
+    IReadOnlyDictionary<string, string>? NomesRecursos = null);
 
 public sealed record Kpis(decimal MesCorrente, decimal MesAnterior, decimal Ytd, decimal PrevisaoMes, decimal CreditosMes);
 public sealed record PontoMensal(string Mes, string Rotulo, bool Parcial, IReadOnlyDictionary<string, decimal> Valores, decimal Total);
 public sealed record PontoDiario(string Dia, IReadOnlyDictionary<string, decimal> Valores);
-public sealed record ItemValor(string Nome, decimal Valor, string? Detalhe = null);
+/// <summary>Chave: identificador técnico (OCID) quando o nome veio do inventário.</summary>
+public sealed record ItemValor(string Nome, decimal Valor, string? Detalhe = null, string? Chave = null);
 
 public sealed record VisaoMoeda(string Moeda, Kpis Kpis, IReadOnlyList<string> ServicosMensal, IReadOnlyList<PontoMensal> Mensal,
     IReadOnlyList<ItemValor> Donut, IReadOnlyList<string> ServicosDiario, IReadOnlyList<PontoDiario> Diario,
@@ -128,7 +130,8 @@ public static class VisaoGeralCustos
         var moedas = servicoMes.Concat(servicoDia).Concat(compMes).Concat(recursoMes).Concat(previsao).Concat(credito)
             .Select(l => l.Moeda).Distinct().Order(StringComparer.Ordinal).ToList();
 
-        var visoes = moedas.Select(m => MontarMoeda(m, hoje, mesAtual, d.DadosAte,
+        var nomes = d.NomesRecursos ?? new Dictionary<string, string>();
+        var visoes = moedas.Select(m => MontarMoeda(m, hoje, mesAtual, d.DadosAte, nomes,
             servicoMes.Where(l => l.Moeda == m).ToList(), servicoDia.Where(l => l.Moeda == m).ToList(),
             compMes.Where(l => l.Moeda == m).ToList(), recursoMes.Where(l => l.Moeda == m).ToList(),
             previsao.Where(l => l.Moeda == m).ToList(), credito.Where(l => l.Moeda == m).ToList())).ToList();
@@ -138,6 +141,7 @@ public static class VisaoGeralCustos
     }
 
     private static VisaoMoeda MontarMoeda(string moeda, DateOnly hoje, DateOnly mesAtual, DateOnly? dadosAte,
+        IReadOnlyDictionary<string, string> nomes,
         List<LinhaAgregada> servicoMes, List<LinhaAgregada> servicoDia, List<LinhaAgregada> compMes,
         List<LinhaAgregada> recursoMes, List<LinhaAgregada> previsao, List<LinhaAgregada> credito)
     {
@@ -189,7 +193,8 @@ public static class VisaoGeralCustos
         var topComp = compMes.Where(l => l.Periodo == mesAtual).GroupBy(l => l.Chave)
             .Select(g => new ItemValor(g.Key, g.Sum(l => l.Valor))).OrderByDescending(i => i.Valor).Take(TopN).ToList();
         var topRec = recursoMes.Where(l => l.Periodo == mesAtual).GroupBy(l => (l.Chave, l.Chave2))
-            .Select(g => new ItemValor(g.Key.Chave, g.Sum(l => l.Valor), string.IsNullOrEmpty(g.Key.Chave2) ? null : g.Key.Chave2))
+            .Select(g => new ItemValor(nomes.GetValueOrDefault(g.Key.Chave) ?? g.Key.Chave, g.Sum(l => l.Valor),
+                string.IsNullOrEmpty(g.Key.Chave2) ? null : g.Key.Chave2, g.Key.Chave))
             .OrderByDescending(i => i.Valor).Take(TopN).ToList();
 
         return new VisaoMoeda(moeda, kpis, servicosMensal, mensal, donut, servicosDiario, diario, topComp, topRec);

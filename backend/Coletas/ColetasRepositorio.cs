@@ -48,10 +48,15 @@ SELECT j.id, j.tipo_job, c.nome, cc.nome, cc.provedor, j.origem, u.nome, j.statu
        j.criado_em, j.iniciado_em, j.finalizado_em,
        CASE WHEN j.iniciado_em IS NULL THEN NULL
             ELSE EXTRACT(EPOCH FROM (COALESCE(j.finalizado_em, now()) - j.iniciado_em))::float8 END,
-       j.erro, j.resumo::text, j.coletor_versao
+       j.erro, j.resumo::text, j.coletor_versao,
+       (j.status IN ('IMPORTADO', 'ERRO') AND j.coletado_em IS NOT NULL
+        AND j.tipo_job IN ('COLETA_COMPLETA', 'COLETA_CUSTO', 'COLETA_INVENTARIO')) AS pode_reimportar
 " + FiltroColetas + @"
 ORDER BY j.criado_em DESC, j.id DESC
 LIMIT @limite OFFSET @deslocamento";
+
+    /// <summary>Função SECURITY DEFINER (DDL do HLGDR): valida perfil/status/bruta e devolve o status anterior.</summary>
+    public const string Reimportar = "SELECT reimportar_job(@id)";
 
     public const string ListarAgenda = @"
 SELECT a.id, a.nome, a.tipo_job, a.cliente_id, c.nome, a.cloud_conta_id, cc.nome, a.cron, a.fuso,
@@ -175,7 +180,7 @@ public sealed class ColetasRepositorio(CloudVistaDb db, TimeProvider relogio, IL
                     itens.Add(new ColetaItem(
                         r.GetInt64(0), r.GetString(1), Txt(r, 2), Txt(r, 3), Txt(r, 4), r.GetString(5), Txt(r, 6),
                         r.GetString(7), r.GetInt16(8), r.GetFieldValue<DateTimeOffset>(9), Data(r, 10), Data(r, 11),
-                        r.IsDBNull(12) ? null : Math.Round(r.GetDouble(12), 1), Txt(r, 13), resumo, Txt(r, 15)));
+                        r.IsDBNull(12) ? null : Math.Round(r.GetDouble(12), 1), Txt(r, 13), resumo, Txt(r, 15), r.GetBoolean(16)));
                 }
             }
             return new PaginaColetas(itens, total, f.Pagina, f.Tamanho);
@@ -189,6 +194,29 @@ public sealed class ColetasRepositorio(CloudVistaDb db, TimeProvider relogio, IL
         cmd.Parameters.Add(new NpgsqlParameter("conta_id", NpgsqlDbType.Bigint) { Value = (object?)f.ContaId ?? DBNull.Value });
         cmd.Parameters.Add(new NpgsqlParameter("status", NpgsqlDbType.Varchar) { Value = (object?)f.Status ?? DBNull.Value });
         cmd.Parameters.Add(new NpgsqlParameter("tipo_job", NpgsqlDbType.Varchar) { Value = (object?)f.TipoJob ?? DBNull.Value });
+    }
+
+    // ── Reimportar ───────────────────────────────────────────────────────────
+
+    /// <summary>Volta o job para COLETADO (o importador pega no próximo ciclo). Devolve o status anterior.</summary>
+    public async Task<string> ReimportarAsync(UsuarioAtual u, long id, CancellationToken ct)
+    {
+        try
+        {
+            var anterior = await db.ExecutarComContextoAsync(u, async (conn, tx) =>
+            {
+                await using var cmd = new NpgsqlCommand(ColetasSql.Reimportar, conn, tx);
+                cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlDbType.Bigint) { Value = id });
+                return await cmd.ExecuteScalarAsync(ct) as string ?? "";
+            }, ct);
+            logger.LogInformation("Reimportação solicitada: usuário {Usuario}, job {Job}, status anterior {Status}.", u.Id, id, anterior);
+            return anterior;
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.RaiseException)
+        {
+            logger.LogInformation("Reimportação recusada: usuário {Usuario}, job {Job}, motivo {Motivo}.", u.Id, id, ex.MessageText);
+            throw ReimportarRegras.Mapear(ex.MessageText);
+        }
     }
 
     // ── Agenda ───────────────────────────────────────────────────────────────
