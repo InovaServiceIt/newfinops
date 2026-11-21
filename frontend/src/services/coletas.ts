@@ -23,7 +23,13 @@ export interface Coleta {
   erro: string | null;
   resumo: Record<string, unknown> | null;
   coletorVersao: string | null;
+  /** IMPORTADO/ERRO com JSON bruto guardado (o banco confirma ao reimportar). */
+  podeReimportar: boolean;
 }
+
+/** Volta a coleta para COLETADO: o importador refaz custo e inventário no próximo ciclo (só ADMINISTRADOR). */
+export const reimportarColeta = (id: number) =>
+  apiSend<{ jobId: number; statusAnterior: string }>('POST', `/api/coletas/${id}/reimportar`, {});
 
 export interface PaginaColetas {
   itens: Coleta[];

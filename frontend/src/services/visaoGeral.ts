@@ -27,6 +27,8 @@ export interface ItemValor {
   nome: string;
   valor: number;
   detalhe: string | null;
+  /** OCID quando o nome veio do inventário. */
+  chave?: string | null;
 }
 
 export interface VisaoMoeda {

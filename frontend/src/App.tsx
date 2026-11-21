@@ -13,12 +13,18 @@ import ColetasPage from './pages/Coletas/ColetasPage';
 
 // Carregada sob demanda: os gráficos (recharts) ficam fora do bundle inicial.
 const VisaoGeralPage = lazy(() => import('./pages/VisaoGeral/VisaoGeralPage'));
+const InventarioPage = lazy(() => import('./pages/Inventario/InventarioPage'));
 
 /** Páginas já implementadas; os demais itens do menu usam o placeholder. */
 const PAGINAS: Record<string, ReactElement> = {
   '/visao-geral': (
     <Suspense fallback={<div className="page-content"><div className="ui-skeleton" style={{ height: 320 }} /></div>}>
       <VisaoGeralPage />
+    </Suspense>
+  ),
+  '/inventario-multicloud': (
+    <Suspense fallback={<div className="page-content"><div className="ui-skeleton" style={{ height: 320 }} /></div>}>
+      <InventarioPage />
     </Suspense>
   ),
   '/configuracoes': <ConfiguracoesPage />,

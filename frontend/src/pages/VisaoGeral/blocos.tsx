@@ -34,9 +34,9 @@ export const Ranking: React.FC<{ titulo: string; itens: ItemValor[]; moeda: stri
       ) : (
         <ol className="vg-ranking-lista">
           {itens.map((i) => (
-            <li key={`${i.nome}|${i.detalhe ?? ''}`} className="vg-ranking-item">
+            <li key={i.chave ?? `${i.nome}|${i.detalhe ?? ''}`} className="vg-ranking-item">
               <div className="vg-ranking-linha">
-                <span className="vg-ranking-nome" title={i.detalhe ? `${i.nome} · ${i.detalhe}` : i.nome}>
+                <span className="vg-ranking-nome" title={[i.nome, i.detalhe, i.chave && i.chave !== i.nome ? i.chave : null].filter(Boolean).join(' · ')}>
                   {i.nome}
                   {i.detalhe && <span className="vg-ranking-detalhe"> · {i.detalhe}</span>}
                 </span>

@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useCurrentUser } from '../../components/auth/AuthGuard';
+import { useCurrentUser, useEhAdministrador } from '../../components/auth/AuthGuard';
+import { Confirmar } from '../../components/common/Modal';
 import { HOME_PATH } from '../../navigation/menu';
-import { Play, RefreshCw } from 'lucide-react';
+import { Play, RefreshCw, RotateCcw } from 'lucide-react';
 import PageHeader from '../../components/layout/PageHeader';
 import { mensagemDeErro } from '../../services/api';
 import {
-  listarColetas, permissaoColeta, ROTULO_ORIGEM, ROTULO_TIPO, STATUS_JOB,
+  listarColetas, permissaoColeta, reimportarColeta, ROTULO_ORIGEM, ROTULO_TIPO, STATUS_JOB,
   type Coleta, type PaginaColetas, type StatusJob, type TipoJob,
 } from '../../services/coletas';
 import { listarContas, type ContaCloud } from '../../services/contas';
@@ -62,6 +63,10 @@ const ColetasConteudo: React.FC = () => {
   const [modal, setModal] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [expandido, setExpandido] = useState<number | null>(null);
+  const ehAdmin = useEhAdministrador();
+  const [reimportando, setReimportando] = useState<Coleta | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const [erroReimportar, setErroReimportar] = useState<string | null>(null);
 
   const [cliente, setCliente] = useState('');
   const [conta, setConta] = useState('');
@@ -95,6 +100,22 @@ const ColetasConteudo: React.FC = () => {
   }, [cliente, conta, status, tipo, de, ate, numPagina]);
 
   useEffect(carregar, [carregar]);
+
+  const confirmarReimportar = async () => {
+    if (!reimportando) return;
+    setOcupado(true);
+    setErroReimportar(null);
+    try {
+      await reimportarColeta(reimportando.id);
+      setAviso(`Coleta #${reimportando.id} enviada para reimportação. O importador processa em instantes.`);
+      setReimportando(null);
+      carregar();
+    } catch (e) {
+      setErroReimportar(mensagemDeErro(e));
+    } finally {
+      setOcupado(false);
+    }
+  };
 
   // Atualiza a cada 10 s só enquanto houver job pendente/executando na página.
   const emAndamento = useMemo(() => (pagina?.itens ?? []).some((c) => c.status === 'PENDENTE' || c.status === 'EXECUTANDO'), [pagina]);
@@ -214,6 +235,11 @@ const ColetasConteudo: React.FC = () => {
                             {expandido === c.id ? 'Ocultar detalhes' : 'Ver detalhes'}
                           </button>
                         )}
+                        {ehAdmin && c.podeReimportar && (
+                          <button type="button" className="coletas-erro-botao" onClick={() => { setErroReimportar(null); setReimportando(c); }}>
+                            <RotateCcw size={12} /> Reimportar
+                          </button>
+                        )}
                       </td>
                     </tr>
                     {expandido === c.id && temDetalhes(c) && (
@@ -236,6 +262,18 @@ const ColetasConteudo: React.FC = () => {
           </div>
         )}
       </section>
+
+      <Confirmar
+        aberto={reimportando !== null}
+        titulo="Reimportar coleta"
+        mensagem={<>Reimportar a coleta <strong>#{reimportando?.id}</strong> ({reimportando?.contaNome ?? '—'})? O custo e o inventário
+          são regravados a partir do JSON guardado, sem nova chamada à cloud. Reimportar de novo não duplica nada.</>}
+        textoConfirmar="Reimportar"
+        ocupado={ocupado}
+        erro={erroReimportar}
+        onConfirmar={confirmarReimportar}
+        onCancelar={() => setReimportando(null)}
+      />
 
       <ColetarAgoraModal
         aberto={modal}
