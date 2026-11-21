@@ -95,6 +95,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Finops.Backend.Custos.CustosRepositorio>();
 builder.Services.AddSingleton<Finops.Backend.Inventario.InventarioRepositorio>();
+builder.Services.AddSingleton<Finops.Backend.Governanca.GovernancaRepositorio>();
 
 // ── CORS: origens via configuração (ex.: Cors__AllowedOrigins="https://a,https://b") ──
 var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
