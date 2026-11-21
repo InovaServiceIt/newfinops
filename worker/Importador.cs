@@ -24,7 +24,7 @@ WHERE id = (SELECT id FROM job_execucao
             ORDER BY coletado_em NULLS LAST, id
             FOR UPDATE SKIP LOCKED
             LIMIT 1)
-RETURNING id, tipo_job, cliente_id, cloud_conta_id";
+RETURNING id, tipo_job, cliente_id, cloud_conta_id, coletado_em";
 
     public const string Bruta = "SELECT sha256, conteudo FROM coleta_bruta WHERE job_execucao_id = @job";
     public const string Provedor = "SELECT provedor FROM cloud_conta WHERE id = @conta";
@@ -65,7 +65,7 @@ SET status = @status, finalizado_em = now(), erro = @erro,
 WHERE id = @job AND status = 'IMPORTANDO'";
 }
 
-public sealed record JobImportacao(long Id, string TipoJob, long ClienteId, long ContaId);
+public sealed record JobImportacao(long Id, string TipoJob, long ClienteId, long ContaId, DateTimeOffset? ColetadoEm = null);
 
 /// <summary>Lê coleta_bruta, valida o sha256 e grava custo_fato/custo_previsao/custo_credito numa transação.</summary>
 public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorRepositorio> logger)
@@ -83,7 +83,10 @@ public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorReposit
         await using var conn = await db.AbrirAsync(ct);
         await using var cmd = new NpgsqlCommand(ImportadorSql.Claim, conn);
         await using var r = await cmd.ExecuteReaderAsync(ct);
-        return await r.ReadAsync(ct) ? new JobImportacao(r.GetInt64(0), r.GetString(1), r.GetInt64(2), r.GetInt64(3)) : null;
+        return await r.ReadAsync(ct)
+            ? new JobImportacao(r.GetInt64(0), r.GetString(1), r.GetInt64(2), r.GetInt64(3),
+                r.IsDBNull(4) ? null : r.GetFieldValue<DateTimeOffset>(4))
+            : null;
     }
 
     /// <summary>Importa um job IMPORTANDO. Lança ImportacaoException (mensagem segura) em falha esperada.</summary>
@@ -106,20 +109,30 @@ public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorReposit
         }
         else
         {
-            var cost = await LerCustoAsync(conn, tx, job, ct);
-            if (cost is null)
+            using var doc = await LerDocumentoAsync(conn, tx, job, ct);
+            var raiz = doc.RootElement;
+
+            // Ordem: compartimentos → recursos → custo (tudo na mesma transação).
+            Dictionary<string, object?>? inventario = null;
+            if (ImportaInventario(job.TipoJob))
             {
-                resumo = ResumoSemDados("sem custo");
+                var planoInv = ParserInventarioOci.Planejar(raiz);
+                inventario = await InventarioGravacao.GravarAsync(conn, tx, job, job.ColetadoEm ?? DateTimeOffset.UtcNow, planoInv, ct);
+                foreach (var aviso in (List<string>)inventario["avisos"]!)
+                    logger.LogWarning("Inventário do job {Job}: {Aviso}.", job.Id, aviso);
+            }
+
+            if (job.TipoJob != "COLETA_INVENTARIO" && raiz.TryGetProperty("cost", out var cost) && cost.ValueKind == JsonValueKind.Object)
+            {
+                var plano = ParserCustoOci.Planejar(cost);
+                await GravarAsync(conn, tx, job, plano, ct);
+                resumo = plano.Resumo();
             }
             else
             {
-                using (cost)
-                {
-                    var plano = ParserCustoOci.Planejar(cost.RootElement);
-                    await GravarAsync(conn, tx, job, plano, ct);
-                    resumo = plano.Resumo();
-                }
+                resumo = ResumoSemDados("sem custo");
             }
+            if (inventario is not null) resumo["inventario"] = inventario;
         }
 
         await ConcluirAsync(conn, tx, job.Id, "IMPORTADO", null, resumo, ct);
@@ -145,8 +158,11 @@ public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorReposit
         ["avisos"] = new[] { aviso },
     };
 
-    /// <summary>JSON "cost" da coleta, ou null se a coleta não trouxe custo (ex.: COLETA_INVENTARIO).</summary>
-    private static async Task<JsonDocument?> LerCustoAsync(NpgsqlConnection conn, NpgsqlTransaction tx, JobImportacao job, CancellationToken ct)
+    /// <summary>Inventário: só COLETA_INVENTARIO e COLETA_COMPLETA.</summary>
+    public static bool ImportaInventario(string tipoJob) => tipoJob is "COLETA_INVENTARIO" or "COLETA_COMPLETA";
+
+    /// <summary>JSON completo da coleta (sha256 conferido).</summary>
+    private static async Task<JsonDocument> LerDocumentoAsync(NpgsqlConnection conn, NpgsqlTransaction tx, JobImportacao job, CancellationToken ct)
     {
         string? sha;
         byte[] conteudo;
@@ -173,24 +189,20 @@ public sealed class ImportadorRepositorio(WorkerDb db, ILogger<ImportadorReposit
             throw new ImportacaoException("coleta_bruta não é um gzip válido");
         }
 
-        JsonDocument doc;
         try
         {
-            doc = JsonDocument.Parse(json);
+            var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                doc.Dispose();
+                throw new ImportacaoException("coleta_bruta não contém um objeto JSON");
+            }
+            return doc;
         }
         catch (JsonException)
         {
             throw new ImportacaoException("coleta_bruta não contém JSON válido");
         }
-
-        if (job.TipoJob == "COLETA_INVENTARIO" || !doc.RootElement.TryGetProperty("cost", out var cost) || cost.ValueKind != JsonValueKind.Object)
-        {
-            doc.Dispose();
-            return null;
-        }
-        var custo = JsonDocument.Parse(cost.GetRawText());
-        doc.Dispose();
-        return custo;
     }
 
     private async Task GravarAsync(NpgsqlConnection conn, NpgsqlTransaction tx, JobImportacao job, PlanoImportacao plano, CancellationToken ct)
