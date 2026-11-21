@@ -56,6 +56,32 @@ public static class ParserInventarioOci
         "capacity_reservations", "osmh_managed_instances", "worker_instance_ids", "containers", "namespace",
     };
 
+    /// <summary>
+    /// Prefixos de escopo do ErrorSink do vendor por categoria do JSON: o vendor nem sempre usa o
+    /// nome da categoria (block_storage → "block.*", load_balancers → "loadbalancer.*").
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string[]> PrefixosEscopo = new Dictionary<string, string[]>
+    {
+        ["block_storage"] = ["block_storage", "block"],
+        ["load_balancers"] = ["load_balancers", "loadbalancer"],
+    };
+
+    public const string EscopoPreflightRegiao = "preflight.region";
+
+    /// <summary>Escopo pertence à categoria? Prefixo seguido de "." ou fim (block não casa com blockchain).</summary>
+    public static bool EscopoDaCategoria(string escopo, string categoria) =>
+        (PrefixosEscopo.TryGetValue(categoria, out var prefixos) ? prefixos : [categoria])
+            .Any(p => escopo == p || escopo.StartsWith(p + ".", StringComparison.Ordinal));
+
+    /// <summary>
+    /// Remoção suspensa para (região, categoria): erro da categoria nessa região, erro da categoria
+    /// sem região (vale para todas) ou preflight.region da região (região inalcançável).
+    /// </summary>
+    private static bool Suspensa(IEnumerable<ErroColeta> erros, string regiao, string categoria) =>
+        erros.Any(e =>
+            (e.Escopo == EscopoPreflightRegiao && e.Regiao == regiao)
+            || (EscopoDaCategoria(e.Escopo, categoria) && (e.Regiao == regiao || string.IsNullOrEmpty(e.Regiao))));
+
     public static bool EhFora(string lista) => Fora.Contains(lista) || lista.EndsWith("_attachments", StringComparison.Ordinal);
 
     public static PlanoInventario Planejar(JsonElement raiz)
@@ -69,7 +95,7 @@ public static class ParserInventarioOci
         if (raiz.TryGetProperty("compartments", out var comps) && comps.ValueKind == JsonValueKind.Array && comps.GetArrayLength() > 0)
         {
             compartimentos = PlanejarCompartimentos(comps, avisos);
-            var erroIam = erros.Any(e => e.Escopo.StartsWith("compartments", StringComparison.Ordinal) || e.Escopo.StartsWith("iam", StringComparison.Ordinal));
+            var erroIam = erros.Any(e => EscopoDaCategoria(e.Escopo, "compartments") || EscopoDaCategoria(e.Escopo, "iam"));
             removerCompartimentos = !erroIam;
             if (erroIam) avisos.Add("remoção suspensa: compartimentos (erro na coleta de IAM/compartments)");
         }
@@ -90,7 +116,7 @@ public static class ParserInventarioOci
                     var cat = categoria.Name;
                     var anexados = cat == "block_storage" ? Anexados(regiao.Value) : null;
                     var namespaceCategoria = Texto(categoria.Value, "namespace");
-                    var suspensa = erros.Any(e => e.Regiao == regiao.Name && e.Escopo.StartsWith(cat, StringComparison.Ordinal));
+                    var suspensa = Suspensa(erros, regiao.Name, cat);
                     var avisouSuspensao = false;
 
                     foreach (var lista in categoria.Value.EnumerateObject())

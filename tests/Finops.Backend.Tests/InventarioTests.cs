@@ -90,7 +90,7 @@ public class InventarioTests
         }
       },
       "errors": [
-        {"scope": "block_storage.volumes", "region": "sa-vinhedo-1", "compartment_id": "x", "error_type": "ServiceError", "error_code": "500", "message": "falha"}
+        {"scope": "block.volumes", "region": "sa-vinhedo-1", "compartment_id": "x", "error_type": "ServiceError", "error_code": "500", "message": "falha"}
       ]
     }
     """;
@@ -217,6 +217,54 @@ public class InventarioTests
         Assert.Contains(new ParRemocao("sa-saopaulo-1", "block_storage.boot_volume_backups"), p.ParesRemocao); // lista vazia presente
         Assert.Contains("remoção suspensa: block_storage em sa-vinhedo-1 (erro na coleta)", p.Avisos);
         Assert.True(p.RemoverCompartimentos);
+    }
+
+    private const string Regioes2 = """
+      "resources_by_region": {
+        "sa-saopaulo-1": { "block_storage": { "volumes": [] }, "load_balancers": { "load_balancers": [] }, "compute": { "instances": [] } },
+        "sa-vinhedo-1":  { "block_storage": { "volumes": [] }, "load_balancers": { "load_balancers": [] }, "compute": { "instances": [] } }
+      }
+    """;
+
+    private static PlanoInventario ComErros(string erros) => Plano("{" + Regioes2 + ", \"errors\": [" + erros + "] }");
+
+    [Theory]
+    [InlineData("block.volumes", "block_storage.volumes")]
+    [InlineData("block.boot_volume_backups", "block_storage.volumes")]
+    [InlineData("block_storage", "block_storage.volumes")]
+    [InlineData("loadbalancer.load_balancers", "load_balancers.load_balancers")]
+    [InlineData("compute", "compute.instances")]
+    public void Escopo_do_vendor_suspende_a_categoria_certa(string escopo, string tipo)
+    {
+        var p = ComErros($$"""{"scope": "{{escopo}}", "region": "sa-vinhedo-1"}""");
+        Assert.DoesNotContain(new ParRemocao("sa-vinhedo-1", tipo), p.ParesRemocao);
+        Assert.Contains(new ParRemocao("sa-saopaulo-1", tipo), p.ParesRemocao);
+    }
+
+    [Fact]
+    public void Prefixo_exige_ponto_ou_fim()
+    {
+        Assert.False(ParserInventarioOci.EscopoDaCategoria("blockchain.x", "block_storage"));
+        Assert.True(ParserInventarioOci.EscopoDaCategoria("block", "block_storage"));
+        Assert.False(ParserInventarioOci.EscopoDaCategoria("computex", "compute"));
+        var p = ComErros("""{"scope": "blockchain.x", "region": "sa-vinhedo-1"}""");
+        Assert.Contains(new ParRemocao("sa-vinhedo-1", "block_storage.volumes"), p.ParesRemocao);
+    }
+
+    [Fact]
+    public void Preflight_da_regiao_suspende_a_regiao_inteira()
+    {
+        var p = ComErros("""{"scope": "preflight.region", "region": "sa-vinhedo-1"}""");
+        Assert.DoesNotContain(p.ParesRemocao, x => x.Regiao == "sa-vinhedo-1");
+        Assert.Equal(3, p.ParesRemocao.Count(x => x.Regiao == "sa-saopaulo-1"));
+    }
+
+    [Fact]
+    public void Erro_sem_regiao_suspende_a_categoria_em_todas_as_regioes()
+    {
+        var p = ComErros("""{"scope": "loadbalancer.list", "region": null}""");
+        Assert.DoesNotContain(p.ParesRemocao, x => x.Tipo == "load_balancers.load_balancers");
+        Assert.Contains(new ParRemocao("sa-vinhedo-1", "compute.instances"), p.ParesRemocao);
     }
 
     [Fact]
