@@ -5,7 +5,8 @@ import { formatMoeda } from '../../utils/format';
 // ── Card de indicador ───────────────────────────────────────────────────────
 interface CardIndicadorProps {
   titulo: string;
-  valor: number;
+  /** null = em apuração (sem número). */
+  valor: number | null;
   moeda: string;
   referencia?: string;
   destaque?: boolean;
@@ -18,8 +19,10 @@ export const CardIndicador: React.FC<CardIndicadorProps> = ({ titulo, valor, moe
       <span>{titulo}</span>
       {parcial && <span className="ui-badge ui-badge-warning">parcial</span>}
     </div>
-    <div className="vg-kpi-valor">{formatMoeda(valor, moeda)}</div>
-    {referencia && <div className="vg-kpi-ref">{referencia}</div>}
+    <div className="vg-kpi-valor">{valor === null ? '—' : formatMoeda(valor, moeda)}</div>
+    {valor === null
+      ? <div className="vg-kpi-ref">Valores em apuração</div>
+      : referencia && <div className="vg-kpi-ref">{referencia}</div>}
   </div>
 );
 

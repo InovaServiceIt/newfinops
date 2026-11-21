@@ -233,12 +233,15 @@ const ExploradorPage: React.FC = () => {
       {resultado.status === 'erro' && <div className="ui-alert ui-alert-danger" role="alert"><AlertTriangle size={16} /> {resultado.mensagem}</div>}
       {resultado.status === 'carregando' && <div className="ui-skeleton inv-esqueleto" />}
 
-      {r && r.vazio && (
+      {r && r.vazio && !r.emApuracao && (
         <div className="ui-card ui-empty">
           <span>Ainda não há custo importado para este filtro. Se a coleta de custo falhou por permissão, veja o diagnóstico em <Link to="/coletas">Coletas</Link>.</span>
         </div>
       )}
 
+      {r && r.vazio && r.emApuracao && (
+        <div className="ui-card ui-empty"><span>Valores em apuração: o custo deste período ainda não foi faturado.</span></div>
+      )}
       {r && !r.vazio && r.moeda && (
         <Resultado r={r} moeda={r.moeda} modo={modo} ordem={ordem} setOrdem={setOrdem}
           onModo={(m) => atualizar({ modo: m === 'linhas' ? 'linhas' : null })}
@@ -335,7 +338,8 @@ const Resultado: React.FC<{
     periodo: rotuloPeriodo(p.periodo), total: p.grupos.reduce((s, g) => s + g.valor, 0) + p.outros,
     ...Object.fromEntries(p.grupos.map((g) => [g.chave, g.valor])), ...(temOutros ? { [OUTROS]: p.outros } : {}),
   }));
-  const variacao = r.totalPeriodoAnterior ? ((r.total - r.totalPeriodoAnterior) * 100) / Math.abs(r.totalPeriodoAnterior) : null;
+  const variacao = r.total !== null && r.totalPeriodoAnterior ? ((r.total - r.totalPeriodoAnterior) * 100) / Math.abs(r.totalPeriodoAnterior) : null;
+  const emApuracao = r.serie.filter((p) => p.emApuracao).map((p) => rotuloPeriodo(p.periodo));
   const maior = r.tabela[0];
 
   const eixo = { fill: t['--text-muted'], fontSize: 12 };
@@ -362,9 +366,9 @@ const Resultado: React.FC<{
     <>
       <section className="exp-kpis" aria-label="Indicadores">
         <div className="ui-card vg-kpi vg-kpi-destaque">
-          <div className="vg-kpi-titulo"><span>Total do período</span>{r.comFator && <span className="ui-badge ui-badge-info">com fator</span>}</div>
-          <div className="vg-kpi-valor">{formatMoeda(r.total, moeda)}</div>
-          <div className="vg-kpi-ref">{rotuloPeriodo(r.de)} a {rotuloPeriodo(r.ate)}</div>
+          <div className="vg-kpi-titulo"><span>Total do período</span>{r.comFator && r.fatorDisponivel !== undefined && <span className="ui-badge ui-badge-info">com fator</span>}</div>
+          <div className="vg-kpi-valor">{r.total === null ? '—' : formatMoeda(r.total, moeda)}</div>
+          <div className="vg-kpi-ref">{r.total === null ? 'Valores em apuração' : `${rotuloPeriodo(r.de)} a ${rotuloPeriodo(r.ate)}`}</div>
         </div>
         <div className="ui-card vg-kpi">
           <div className="vg-kpi-titulo"><span>Vs. período anterior</span></div>
@@ -424,7 +428,10 @@ const Resultado: React.FC<{
             </LineChart>
           )}
         </ResponsiveContainer>
-        <p className="vg-nota">Clique numa série para filtrar por ela. "Outros" soma os grupos fora do top {r.grupos.length}.</p>
+        <p className="vg-nota">
+          Clique numa série para filtrar por ela. "Outros" soma os grupos fora do top {r.grupos.length}.
+          {emApuracao.length > 0 && <> Em apuração (sem valor): {emApuracao.join(', ')}; a tabela considera só os períodos apurados.</>}
+        </p>
       </section>
 
       <section className="ui-card inv-tabela" aria-label="Tabela">

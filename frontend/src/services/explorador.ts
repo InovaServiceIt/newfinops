@@ -6,7 +6,7 @@ export type Granularidade = 'DIA' | 'MES';
 export type Dimensao = 'SERVICO' | 'COMPARTIMENTO' | 'RECURSO' | 'TAG';
 
 export interface GrupoValor { chave: string; valor: number }
-export interface PontoSerie { periodo: string; grupos: GrupoValor[]; outros: number }
+export interface PontoSerie { periodo: string; grupos: GrupoValor[]; outros: number; emApuracao?: boolean }
 export interface LinhaTabela {
   chave: string;
   rotulo: string;
@@ -26,16 +26,19 @@ export interface RespostaExplorador {
   moeda: string | null;
   moedas: string[];
   comFator: boolean;
-  fatorDisponivel: boolean;
+  /** Ausente para o perfil CLIENTE. */
+  fatorDisponivel?: boolean;
   grupos: string[];
   serie: PontoSerie[];
   tabela: LinhaTabela[];
   tabelaTruncada: boolean;
-  total: number;
+  /** null = em apuração (CLIENTE sem fator vigente em algum período). */
+  total: number | null;
   totalPeriodoAnterior: number | null;
   creditos: number | null;
   proveniencia: ProvenienciaCusto[];
   vazio: boolean;
+  emApuracao?: boolean;
 }
 
 export interface ConsultaExplorador {

@@ -1,4 +1,4 @@
-import { apiGet } from './api';
+import { apiGet, apiSend } from './api';
 import type { ProvenienciaConta, Tags } from './inventario';
 
 // Cliente de /api/governanca-tags (leitura sobre o inventário; nada é persistido).
@@ -78,14 +78,56 @@ function query(f: FiltroGovernanca, extra: Record<string, string> = {}): string 
 export const buscarResumoGovernanca = (f: FiltroGovernanca, signal?: AbortSignal) =>
   apiGet<ResumoGovernanca>(`/api/governanca-tags/resumo?${query(f)}`, signal);
 
-export const buscarAvaliacao = (f: FiltroGovernanca, chaves: string[], signal?: AbortSignal) =>
-  apiGet<AvaliacaoGovernanca>(`/api/governanca-tags/avaliacao?${query(f, { chaves: chaves.join(',') })}`, signal);
+/** politica=true: avalia as chaves ativas da política do cliente (com valores permitidos); chaves é ignorado. */
+export const buscarAvaliacao = (f: FiltroGovernanca, chaves: string[], signal?: AbortSignal, politica = false) =>
+  apiGet<AvaliacaoGovernanca>(`/api/governanca-tags/avaliacao?${query(f, politica ? { politica: 'true' } : { chaves: chaves.join(',') })}`, signal);
 
 export const buscarVariacoes = (f: FiltroGovernanca, chave: string, signal?: AbortSignal) =>
   apiGet<GrupoVariacao[]>(`/api/governanca-tags/variacoes?${query(f, { chave })}`, signal);
 
-export const buscarNaoConformes = (f: FiltroGovernanca, chaves: string[], faltando: string, pagina: number, signal?: AbortSignal) =>
-  apiGet<PaginaNaoConformes>(`/api/governanca-tags/nao-conformes?${query(f, { chaves: chaves.join(','), faltando, pagina: String(pagina) })}`, signal);
+const chavesOuPolitica = (chaves: string[], politica: boolean): Record<string, string> =>
+  politica ? { politica: 'true' } : { chaves: chaves.join(',') };
 
-export const urlExportarNaoConformes = (f: FiltroGovernanca, chaves: string[], faltando: string) =>
-  `/api/governanca-tags/nao-conformes/exportar?${query(f, { chaves: chaves.join(','), faltando })}`;
+export const buscarNaoConformes = (f: FiltroGovernanca, chaves: string[], faltando: string, pagina: number, signal?: AbortSignal, politica = false) =>
+  apiGet<PaginaNaoConformes>(`/api/governanca-tags/nao-conformes?${query(f, { ...chavesOuPolitica(chaves, politica), faltando, pagina: String(pagina) })}`, signal);
+
+export const urlExportarNaoConformes = (f: FiltroGovernanca, chaves: string[], faltando: string, politica = false) =>
+  `/api/governanca-tags/nao-conformes/exportar?${query(f, { ...chavesOuPolitica(chaves, politica), faltando })}`;
+
+// ── Política de tags por cliente ──
+export interface PoliticaChave {
+  id: number;
+  chave: string;
+  valoresPermitidos: string[] | null;
+  descricao: string | null;
+  ativa: boolean;
+  presentes: number | null;
+  ausentes: number | null;
+  foraDaLista: number | null;
+  presentesPct: number | null;
+  atualizadoEm: string | null;
+  atualizadoPor: string | null;
+}
+export interface PoliticaResumo {
+  clienteId: number;
+  total: number;
+  conformes: number;
+  conformidadePct: number;
+  comAlgumaTag: number;
+  chaves: PoliticaChave[];
+}
+export interface PoliticaEntrada {
+  clienteId?: number;
+  chave?: string;
+  valoresPermitidos: string[] | null;
+  descricao: string | null;
+  ativa?: boolean;
+}
+export interface PontoEvolucao { dia: string; total: number; conformes: number; comAlgumaTag: number; conformidadePct: number; chaves: string[] }
+
+export const buscarPolitica = (clienteId: number, signal?: AbortSignal) =>
+  apiGet<PoliticaResumo>(`/api/politica-tags?clienteId=${clienteId}`, signal);
+export const criarChavePolitica = (e: PoliticaEntrada) => apiSend<PoliticaResumo>('POST', '/api/politica-tags', e);
+export const atualizarChavePolitica = (id: number, e: PoliticaEntrada) => apiSend<PoliticaResumo>('PUT', `/api/politica-tags/${id}`, e);
+export const buscarEvolucao = (clienteId: number, signal?: AbortSignal) =>
+  apiGet<{ meta: number; pontos: PontoEvolucao[] }>(`/api/politica-tags/evolucao?clienteId=${clienteId}`, signal);

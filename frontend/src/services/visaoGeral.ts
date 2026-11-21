@@ -2,12 +2,13 @@ import { apiGet, apiSend } from './api';
 
 // Cliente de /api/visao-geral e /api/fator-cliente (tipos espelham os DTOs do backend).
 
+/** null = em apuração (perfil CLIENTE sem fator vigente no período). */
 export interface Kpis {
-  mesCorrente: number;
-  mesAnterior: number;
-  ytd: number;
-  previsaoMes: number;
-  creditosMes: number;
+  mesCorrente: number | null;
+  mesAnterior: number | null;
+  ytd: number | null;
+  previsaoMes: number | null;
+  creditosMes: number | null;
 }
 
 export interface PontoMensal {
@@ -16,11 +17,13 @@ export interface PontoMensal {
   parcial: boolean;
   valores: Record<string, number>;
   total: number;
+  emApuracao?: boolean;
 }
 
 export interface PontoDiario {
   dia: string;
   valores: Record<string, number>;
+  emApuracao?: boolean;
 }
 
 export interface ItemValor {
@@ -41,6 +44,7 @@ export interface VisaoMoeda {
   diario: PontoDiario[];
   topCompartimentos: ItemValor[];
   topRecursos: ItemValor[];
+  mesEmApuracao?: boolean;
 }
 
 export interface VisaoGeral {
@@ -51,10 +55,12 @@ export interface VisaoGeral {
   ultimoJob: number | null;
   ultimaImportacao: string | null;
   comFator: boolean;
-  fatorDisponivel: boolean;
-  fatorAtual: number | null;
+  /** Ausentes para o perfil CLIENTE (o fator nunca é exposto a ele). */
+  fatorDisponivel?: boolean;
+  fatorAtual?: number | null;
   vazio: boolean;
   moedas: VisaoMoeda[];
+  emApuracao?: boolean;
 }
 
 export interface FiltrosVisaoGeral {

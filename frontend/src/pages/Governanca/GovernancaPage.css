@@ -255,3 +255,38 @@
 @media (max-width: 600px) {
   .gov-kpis, .gov-donut { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── Política de tags ────────────────────────────────────────────────────── */
+.pol-resumo {
+  font-size: var(--font-size-sm);
+  color: var(--text);
+}
+
+.pol-sugestoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.pol-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text);
+}
+
+.pol-chip button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  font: inherit;
+}
+
+.pol-chip button:hover {
+  color: var(--text);
+}

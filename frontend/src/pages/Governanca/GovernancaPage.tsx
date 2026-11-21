@@ -8,9 +8,10 @@ import { mensagemDeErro } from '../../services/api';
 import { listarContas, type ContaCloud } from '../../services/contas';
 import { buscarResumo as buscarResumoInventario, rotuloTipo, type ResumoInventario } from '../../services/inventario';
 import {
-  buscarAvaliacao, buscarNaoConformes, buscarResumoGovernanca, buscarVariacoes, MAX_CHAVES, urlExportarNaoConformes,
-  type AvaliacaoGovernanca, type FiltroGovernanca, type GrupoVariacao, type PaginaNaoConformes, type ResumoGovernanca,
+  buscarAvaliacao, buscarNaoConformes, buscarPolitica, buscarResumoGovernanca, buscarVariacoes, MAX_CHAVES, urlExportarNaoConformes,
+  type AvaliacaoGovernanca, type FiltroGovernanca, type GrupoVariacao, type PaginaNaoConformes, type PoliticaResumo, type ResumoGovernanca,
 } from '../../services/governanca';
+import PoliticaAba, { ModalChavePolitica, type ChaveEmEdicao } from './PoliticaAba';
 import { useTokenValues } from '../../theme/useTokenValues';
 import PainelRecurso from '../Inventario/PainelRecurso';
 import '../Inventario/InventarioPage.css';
@@ -41,6 +42,8 @@ const GovernancaPage: React.FC = () => {
   const chaves = useMemo(() => (params.get('chaves') ?? '').split(',').filter(Boolean).slice(0, MAX_CHAVES), [params]);
   const faltando = params.get('faltando') ?? '';
   const chaveVariacao = params.get('var') ?? '';
+  const aba = params.get('aba') === 'politica' ? 'politica' : 'analise';
+  const podeEditarPolitica = usuario?.perfil === 'ADMINISTRADOR' || usuario?.perfil === 'ANALISTA_FINOPS';
 
   const atualizar = (mudancas: Record<string, string | null>) => {
     const p = new URLSearchParams(params);
@@ -65,6 +68,23 @@ const GovernancaPage: React.FC = () => {
   const [pagina, setPagina] = useState(1);
   const [aberto, setAberto] = useState<{ contaId: number; chave: string } | null>(null);
   const tabelaRef = useRef<HTMLElement>(null);
+  const [politica, setPolitica] = useState<PoliticaResumo | null>(null);
+  const [erroPolitica, setErroPolitica] = useState<string | null>(null);
+  const [versaoPolitica, setVersaoPolitica] = useState(0);
+  const [editando, setEditando] = useState<{ c: ChaveEmEdicao; sugestoes: string[] } | null>(null);
+
+  // Política do cliente: com chave ativa e sem chaves ad hoc na URL, a conformidade é a da política.
+  useEffect(() => {
+    if (!clienteId) return;
+    const ctrl = new AbortController();
+    setErroPolitica(null);
+    buscarPolitica(clienteId, ctrl.signal).then(setPolitica)
+      .catch((e) => { if (!ctrl.signal.aborted) { setPolitica(null); setErroPolitica(mensagemDeErro(e)); } });
+    return () => ctrl.abort();
+  }, [clienteId, versaoPolitica]);
+  const chavesPolitica = useMemo(() => (politica?.chaves ?? []).filter((c) => c.ativa).map((c) => c.chave), [politica]);
+  const modoPolitica = chaves.length === 0 && chavesPolitica.length > 0;
+  const chavesAvaliadas = modoPolitica ? chavesPolitica : chaves;
 
   useEffect(() => {
     if (!clienteId) return;
@@ -92,26 +112,28 @@ const GovernancaPage: React.FC = () => {
   }, [filtro]);
 
   useEffect(() => {
-    if (!filtro || chaves.length === 0) { setAvaliacao(null); return; }
+    if (!filtro || chavesAvaliadas.length === 0) { setAvaliacao(null); return; }
     const ctrl = new AbortController();
     setAvaliacao({ status: 'carregando' });
-    buscarAvaliacao(filtro, chaves, ctrl.signal)
+    buscarAvaliacao(filtro, chaves, ctrl.signal, modoPolitica)
       .then((d) => setAvaliacao({ status: 'ok', dados: d }))
       .catch((e) => { if (!ctrl.signal.aborted) setAvaliacao({ status: 'erro', mensagem: mensagemDeErro(e) }); });
     return () => ctrl.abort();
-  }, [filtro, chaves]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtro, chaves, modoPolitica, chavesPolitica.join(','), versaoPolitica]);
 
-  useEffect(() => { setPagina(1); }, [filtro, chaves, faltando]);
+  useEffect(() => { setPagina(1); }, [filtro, chaves, faltando, modoPolitica]);
 
   useEffect(() => {
-    if (!filtro || chaves.length === 0) { setLista(null); return; }
+    if (!filtro || chavesAvaliadas.length === 0) { setLista(null); return; }
     const ctrl = new AbortController();
     setLista((l) => l ?? { status: 'carregando' });
-    buscarNaoConformes(filtro, chaves, faltando, pagina, ctrl.signal)
+    buscarNaoConformes(filtro, chaves, faltando, pagina, ctrl.signal, modoPolitica)
       .then((d) => setLista({ status: 'ok', dados: d }))
       .catch((e) => { if (!ctrl.signal.aborted) setLista({ status: 'erro', mensagem: mensagemDeErro(e) }); });
     return () => ctrl.abort();
-  }, [filtro, chaves, faltando, pagina]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtro, chaves, faltando, pagina, modoPolitica, chavesPolitica.join(','), versaoPolitica]);
 
   useEffect(() => {
     if (!filtro || !chaveVariacao) { setVariacoes(null); return; }
@@ -150,6 +172,13 @@ const GovernancaPage: React.FC = () => {
   return (
     <div className="page-content gov-pagina">
       <PageHeader title="Governança de tags" />
+
+      <div className="ui-tabs" role="tablist">
+        <button type="button" role="tab" className="ui-tab" aria-selected={aba === 'analise'} onClick={() => atualizar({ aba: null })}>Análise</button>
+        <button type="button" role="tab" className="ui-tab" aria-selected={aba === 'politica'} onClick={() => atualizar({ aba: 'politica' })}>
+          Política{chavesPolitica.length > 0 ? ` (${chavesPolitica.length})` : ''}
+        </button>
+      </div>
 
       <div className="ui-card inv-filtros">
         <div className="ui-field">
@@ -194,16 +223,21 @@ const GovernancaPage: React.FC = () => {
         </label>
       </div>
 
-      {resumo.status === 'erro' && <div className="ui-alert ui-alert-danger" role="alert"><AlertTriangle size={16} /> {resumo.mensagem}</div>}
-      {resumo.status === 'carregando' && <div className="ui-skeleton inv-esqueleto" />}
+      {aba === 'politica' && (
+        <PoliticaAba clienteId={clienteId} politica={politica} erro={erroPolitica} podeEditar={podeEditarPolitica} versao={versaoPolitica}
+          onEditar={(c) => setEditando({ c, sugestoes: [] })} />
+      )}
 
-      {vazio && (
+      {aba === 'analise' && resumo.status === 'erro' && <div className="ui-alert ui-alert-danger" role="alert"><AlertTriangle size={16} /> {resumo.mensagem}</div>}
+      {aba === 'analise' && resumo.status === 'carregando' && <div className="ui-skeleton inv-esqueleto" />}
+
+      {aba === 'analise' && vazio && (
         <div className="ui-card ui-empty">
           <span>Nenhum inventário importado para este filtro. Verifique em <Link to="/coletas">Coletas</Link>.</span>
         </div>
       )}
 
-      {r && !vazio && (
+      {aba === 'analise' && r && !vazio && (
         <>
           <section className="gov-kpis" aria-label="Indicadores">
             <div className="ui-card inv-kpi inv-kpi-destaque">
@@ -222,7 +256,9 @@ const GovernancaPage: React.FC = () => {
             <div className="ui-card inv-kpi">
               <span className="inv-kpi-titulo">Conformidade</span>
               <span className="inv-kpi-valor">{av ? pct(av.coberturaPct) : '—'}</span>
-              <span className="inv-nota">{chaves.length ? `${chaves.length} chave(s) obrigatória(s)` : 'Selecione chaves abaixo'}</span>
+              <span className="inv-nota">
+                {modoPolitica ? `Política: ${chavesPolitica.length} chave(s)` : chaves.length ? `${chaves.length} chave(s) ad hoc` : 'Selecione chaves abaixo ou cadastre a política'}
+              </span>
             </div>
           </section>
 
@@ -268,6 +304,12 @@ const GovernancaPage: React.FC = () => {
                           </td>
                           <td>
                             <button type="button" className="ui-btn ui-btn-ghost" onClick={() => atualizar({ var: c.chave })}>Variações</button>
+                            {podeEditarPolitica && !(politica?.chaves ?? []).some((p) => p.chave === c.chave) && (
+                              <button type="button" className="ui-btn ui-btn-ghost" title="Adicionar à política do cliente"
+                                onClick={() => setEditando({ c: { chave: c.chave, valores: [], descricao: '', ativa: true }, sugestoes: c.topValores.map((v) => v.valor) })}>
+                                + Política
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -278,14 +320,22 @@ const GovernancaPage: React.FC = () => {
             )}
           </section>
 
-          {chaves.length > 0 && (
+          {chavesAvaliadas.length > 0 && (
             <section className="ui-card gov-bloco" aria-label="Conformidade">
               <div className="gov-bloco-topo">
-                <h2 className="ui-card-title">Conformidade</h2>
+                <h2 className="ui-card-title">
+                  Conformidade{' '}
+                  <span className={`ui-badge ${modoPolitica ? 'ui-badge-success' : 'ui-badge-info'}`}>{modoPolitica ? 'Política' : 'Ad hoc'}</span>
+                </h2>
                 <span className="gov-selecionadas">
-                  {chaves.map((c) => (
-                    <button key={c} type="button" className="inv-chip gov-chip-remover" onClick={() => alternarChave(c)} title="Remover da avaliação">{c} ×</button>
-                  ))}
+                  {modoPolitica
+                    ? chavesPolitica.map((c) => <span key={c} className="inv-chip">{c}</span>)
+                    : chaves.map((c) => (
+                      <button key={c} type="button" className="inv-chip gov-chip-remover" onClick={() => alternarChave(c)} title="Remover da avaliação">{c} ×</button>
+                    ))}
+                  {!modoPolitica && chavesPolitica.length > 0 && (
+                    <button type="button" className="ui-btn ui-btn-ghost" onClick={() => atualizar({ chaves: null, faltando: null })}>Voltar para a política</button>
+                  )}
                 </span>
               </div>
               {avaliacao?.status === 'carregando' && <div className="ui-skeleton inv-esqueleto" />}
@@ -323,7 +373,7 @@ const GovernancaPage: React.FC = () => {
             </section>
           )}
 
-          {chaves.length > 0 && (
+          {chavesAvaliadas.length > 0 && (
             <section ref={tabelaRef} className="ui-card inv-tabela" aria-label="Não conformes">
               <div className="inv-tabela-topo">
                 <span>
@@ -332,7 +382,7 @@ const GovernancaPage: React.FC = () => {
                 </span>
                 <span className="gov-acoes">
                   {faltando && <button type="button" className="ui-btn ui-btn-ghost" onClick={() => atualizar({ faltando: null })}>Limpar filtro</button>}
-                  <a className="ui-btn ui-btn-secondary" href={urlExportarNaoConformes(filtro, chaves, faltando)} download>
+                  <a className="ui-btn ui-btn-secondary" href={urlExportarNaoConformes(filtro, chaves, faltando, modoPolitica)} download>
                     <Download size={16} /> Exportar CSV
                   </a>
                 </span>
@@ -387,6 +437,11 @@ const GovernancaPage: React.FC = () => {
       )}
 
       {aberto && <PainelRecurso contaId={aberto.contaId} chave={aberto.chave} onFechar={() => setAberto(null)} />}
+      {editando && (
+        <ModalChavePolitica clienteId={clienteId} edicao={editando.c} sugestoes={editando.sugestoes}
+          onFechar={() => setEditando(null)}
+          onSalvo={(novo) => { setPolitica(novo); setEditando(null); setVersaoPolitica((v) => v + 1); }} />
+      )}
     </div>
   );
 };

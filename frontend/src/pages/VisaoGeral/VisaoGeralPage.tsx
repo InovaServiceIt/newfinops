@@ -64,7 +64,7 @@ const VisaoGeralPage: React.FC = () => {
         className="ui-switch"
         aria-disabled={!v?.fatorDisponivel}
         title={!v ? '' : v.fatorDisponivel
-          ? (v.fatorAtual !== null ? `Fator vigente: ${v.fatorAtual.toLocaleString('pt-BR', { maximumFractionDigits: 6 })}` : 'Fator vigente em parte do período')
+          ? (v.fatorAtual != null ? `Fator vigente: ${v.fatorAtual.toLocaleString('pt-BR', { maximumFractionDigits: 6 })}` : 'Fator vigente em parte do período')
           : 'Sem fator cadastrado para este cliente/conta'}
       >
         <input
@@ -112,7 +112,10 @@ const VisaoGeralPage: React.FC = () => {
 
       {visao.status === 'carregando' && <Esqueleto />}
       {visao.status === 'erro' && <Alerta texto={visao.mensagem} />}
-      {v && v.vazio && (
+      {v && v.vazio && v.emApuracao && (
+        <div className="ui-card ui-empty"><span>Valores em apuração: o custo deste período ainda não foi faturado.</span></div>
+      )}
+      {v && v.vazio && !v.emApuracao && (
         <div className="ui-card ui-empty">
           <span>Nenhum custo importado para este filtro. Verifique em <Link to="/coletas">Coletas</Link>.</span>
         </div>
@@ -131,10 +134,10 @@ const Conteudo: React.FC<{ v: VisaoGeral }> = ({ v }) => (
         Os valores aparecem separados por moeda, sem conversão.
       </div>
     )}
-    {v.comFator && (
+    {v.comFator && v.fatorDisponivel !== undefined && (
       <div className="ui-alert ui-alert-info vg-aviso-fator">
         Valores multiplicados pelo fator do cliente vigente em cada período
-        {v.fatorAtual !== null && <> (atual: {v.fatorAtual.toLocaleString('pt-BR', { maximumFractionDigits: 6 })})</>}.
+        {v.fatorAtual != null && <> (atual: {v.fatorAtual.toLocaleString('pt-BR', { maximumFractionDigits: 6 })})</>}.
       </div>
     )}
 
@@ -169,18 +172,23 @@ const BlocoMoeda: React.FC<{ m: VisaoMoeda; multi: boolean }> = ({ m, multi }) =
       <section className="ui-card vg-grafico">
         <h2 className="ui-card-title">Custo mensal por serviço · 12 meses{sufixo}</h2>
         <GraficoMensal dados={m.mensal} servicos={m.servicosMensal} moeda={m.moeda} cores={cores} />
-        <p className="vg-nota">* {m.mensal[m.mensal.length - 1]?.rotulo} é o mês em curso (parcial).</p>
+        <p className="vg-nota">
+          * {m.mensal[m.mensal.length - 1]?.rotulo} é o mês em curso (parcial).
+          {m.mensal.some((p) => p.emApuracao) && <> Em apuração: {m.mensal.filter((p) => p.emApuracao).map((p) => p.rotulo).join(', ')}.</>}
+        </p>
       </section>
 
       <div className="vg-duas-colunas">
         <section className="ui-card vg-grafico">
           <h2 className="ui-card-title">Por serviço · mês corrente{sufixo}</h2>
-          {m.donut.length === 0 ? <div className="ui-empty">Sem custo no mês</div> : <GraficoDonut itens={m.donut} moeda={m.moeda} cores={cores} />}
+          {m.mesEmApuracao ? <div className="ui-empty">Valores em apuração</div>
+            : m.donut.length === 0 ? <div className="ui-empty">Sem custo no mês</div> : <GraficoDonut itens={m.donut} moeda={m.moeda} cores={cores} />}
         </section>
         <section className="ui-card vg-grafico">
           <h2 className="ui-card-title">Custo diário · últimos 30 dias{sufixo}</h2>
           {m.diario.length === 0 ? <div className="ui-empty">Sem custo diário</div>
             : <GraficoDiario dados={m.diario} servicos={m.servicosDiario} moeda={m.moeda} cores={cores} />}
+          {m.diario.some((p) => p.emApuracao) && <p className="vg-nota">Dias sem fator vigente aparecem vazios (em apuração).</p>}
         </section>
       </div>
 
